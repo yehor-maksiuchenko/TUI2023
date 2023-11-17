@@ -17,24 +17,29 @@ void ATarget3D::BeginPlay()
 	Super::BeginPlay();
 	SetActorLocation(StartPos);
 	SetActorRotation(StartRot);
+	CurrentVelocity = StartRot.Vector() * InitVelocity;
+	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, (StartRot.Vector()).ToString());
 }
 
 void ATarget3D::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	t += DeltaTime;
 	if (isBallistic)
 	{
+		t += DeltaTime;
 		FVector old_pos = GetActorLocation();
-		SetActorLocation(/*old_pos + */BallisticMovement(t * 10));
+		CurrentVelocity += BallisticMovement(DeltaTime);
+		SetActorLocation(old_pos + CurrentVelocity);
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
-		
+		/*SetActorLocation(old_pos + BallisticMovement(t * 10));
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation())); */
 	}
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, GetActorLocation().ToString());
 }
 
-FVector ATarget3D::BallisticMovement(float Time)
+FVector ATarget3D::BallisticMovement(float D_Time)
 {
-	float Pitch = StartRot.Pitch * PI / 180.0f;
+	/*float Pitch = StartRot.Pitch * PI / 180.0f;
 	float Yaw = StartRot.Yaw * PI / 180.0f;
 
 	float V0x = InitVelocity * FMath::Cos(Pitch) * FMath::Cos(Yaw);
@@ -43,7 +48,12 @@ FVector ATarget3D::BallisticMovement(float Time)
 
 	float X = V0x * Time + StartPos.X;
 	float Z = V0z * Time - 0.5f * Time * Time + StartPos.Z;
-	float Y = V0y * Time + StartPos.Y;
-	return FVector(X, Y, Z);
+	float Y = V0y * Time + StartPos.Y;*/
+
+	FVector drag = -CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p;
+	FVector gravity = FVector(0.0, 0.0, -G * M);
+	FVector force = drag + gravity;
+	FVector acc = force / M;
+	return acc * D_Time;
 }
 

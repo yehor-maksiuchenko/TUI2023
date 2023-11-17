@@ -22,12 +22,13 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	float t = 0;
 
-	float ENG = 40.0;
-	float M = 1.0;
+	float M = 100.0;
 	float G = 9.8;
-	float K = 0.05; //change this later
+	float K = 5; //change this later
+	float p = 1.2255;
+	FVector CurrentVelocity;
 
-	FVector BallisticMovement(float Time);
+	FVector BallisticMovement(float D_Time);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
@@ -42,10 +43,13 @@ public:
 		FVector StartPos = FVector(460, -350, 80);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator StartRot = FRotator(40, 0, 90);
+		FRotator StartRot = FRotator(40, 61, 0);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int InitVelocity = 50;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		//FVector CurrentVelocity;
 
 
 };
