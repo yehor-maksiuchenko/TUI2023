@@ -26,7 +26,7 @@ void ATarget3D::Tick(float DeltaTime)
 	if (isBallistic)
 	{
 		FVector old_pos = GetActorLocation();
-		SetActorLocation(/*old_pos + */BallisticMovement(t));
+		SetActorLocation(/*old_pos + */BallisticMovement(t * 10));
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
 		
 	}
@@ -41,9 +41,9 @@ FVector ATarget3D::BallisticMovement(float Time)
 	float V0y = InitVelocity * FMath::Cos(Pitch) * FMath::Sin(Yaw);
 	float V0z = InitVelocity * FMath::Sin(Pitch);
 
-	float X = V0x * t + StartPos.X;
-	float Z = V0z * t - 0.5f * t * t + StartPos.Z;
-	float Y = V0y * t + StartPos.Y;
+	float X = V0x * Time + StartPos.X;
+	float Z = V0z * Time - 0.5f * Time * Time + StartPos.Z;
+	float Y = V0y * Time + StartPos.Y;
 	return FVector(X, Y, Z);
 }
 
