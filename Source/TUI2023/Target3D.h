@@ -4,6 +4,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Containers/Array.h" 
+#include "Math/Vector.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Target3D.generated.h"
 
@@ -28,7 +30,7 @@ public:
 	float p = 1.2255;
 	FVector CurrentVelocity;
 
-	FVector BallisticMovement(float D_Time);
+	FVector BallisticMovement();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
@@ -37,7 +39,7 @@ public:
 		bool bMove = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool isBallistic = true;
+		bool isBallistic = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector StartPos = FVector(460, -350, 80);
@@ -46,10 +48,15 @@ public:
 		FRotator StartRot = FRotator(40, 61, 0);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int InitVelocity = 50;
+		int Velocity = 50;
 
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		//FVector CurrentVelocity;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FVector> TargetPath;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FVector FromLocation = FVector(0, 0, 0);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FVector ToLocation;
 
 };
