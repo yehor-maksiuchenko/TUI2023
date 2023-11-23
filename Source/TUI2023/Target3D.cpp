@@ -19,16 +19,16 @@ ATarget3D::ATarget3D()
 void ATarget3D::BeginPlay()
 {
 	Super::BeginPlay();
-	SetActorLocation(StartPos);
+	SetActorLocation(StartLocation);
 	if (isBallistic)
 	{
-		SetActorRotation(StartRot);
-		CurrentVelocity = StartRot.Vector() * Velocity;
+		SetActorRotation(StartRotation);
+		CurrentVelocity = StartRotation.Vector() * Velocity;
 	}
 	else
 	{
 		ToLocation = TargetPath[0];
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartPos, ToLocation));
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartLocation, ToLocation));
 	}
 	
 	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, (StartRot.Vector()).ToString());
@@ -44,12 +44,12 @@ void ATarget3D::Tick(float DeltaTime)
 		CurrentVelocity += BallisticMovement() * DeltaTime;
 		SetActorLocation(old_pos + CurrentVelocity);
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
-		/*SetActorLocation(old_pos + BallisticMovement(t * 10)); */
 	}
 	else
 	{
-		SetActorLocation(old_pos + GetActorForwardVector() * (Velocity * DeltaTime));
-		if (FVector::Dist(GetActorLocation(), ToLocation) <= Velocity / 2)
+		float dVelocity = Velocity * DeltaTime;
+		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);
+		if (FVector::Dist(GetActorLocation(), ToLocation) <= dVelocity)
 		{
 			if (ToLocation != TargetPath.Last())
 			{
@@ -77,5 +77,16 @@ FVector ATarget3D::BallisticMovement()
 	FVector force = drag + gravity;
 	FVector acc = force / M;*/
 	return (-CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p + FVector(0.0, 0.0, -G * M)) / M;
+}
+
+void ATarget3D::AerodynamicalRotation(const FRotator& TargetRotation)
+{
+	FRotator CurrentRotation = GetActorRotation();
+
+	FRotator DeltaRotation = FMath::RInterpConstantTo(CurrentRotation, TargetRotation, FMath::DegreesToRadians(RotationSpeed) * GetWorld()->DeltaTimeSeconds);
+
+	FRotator NewRotation = FMath::Lerp(CurrentRotation, DeltaRotation, FMath::Clamp(RotationSpeed * GetWorld()->DeltaTimeSeconds, 0.0f, 1.0f));
+
+	SetActorRotation(NewRotation);
 }
 

@@ -30,7 +30,10 @@ public:
 	float p = 1.2255;
 	FVector CurrentVelocity;
 
+	bool bRotate = false;
+
 	FVector BallisticMovement();
+	void AerodynamicalRotation(const FRotator& TargetRotation);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
@@ -42,13 +45,16 @@ public:
 		bool isBallistic = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector StartPos = FVector(460, -350, 80);
+		FVector StartLocation = FVector(460, -350, 80);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator StartRot = FRotator(40, 61, 0);
+		FRotator StartRotation = FRotator(40, 61, 0);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int Velocity = 50;
+		int Velocity = 200;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int RotationSpeed = 230;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FVector> TargetPath;
