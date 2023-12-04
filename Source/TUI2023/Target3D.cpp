@@ -54,9 +54,10 @@ void ATarget3D::Tick(float DeltaTime)
 			if (ToLocation != TargetPath.Last())
 			{
 				SetActorLocation(ToLocation);
-				SetActorRotation(UKismetMathLibrary::FindLookAtRotation(ToLocation, TargetPath[1]));
+				//SetActorRotation(UKismetMathLibrary::FindLookAtRotation(ToLocation, TargetPath[1]));
 				ToLocation = TargetPath[1];
 				TargetPath.RemoveAt(0);
+				bRotate = true;
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached a point: ") + GetActorLocation().ToString());
 			}
 			else
@@ -64,7 +65,13 @@ void ATarget3D::Tick(float DeltaTime)
 				Velocity = 0;
 				TargetPath.RemoveAt(0);
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached last point"));
+				bRotate = false;
 			}
+		}
+		if (bRotate)
+		{
+			AerodynamicalRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ToLocation), DeltaTime);
+			//AddActorLocalRotation((UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ToLocation) - GetActorRotation()).GetNormalized() * DeltaTime * RotationSpeed);
 		}
 	}
 	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(1.0f / DeltaTime));
@@ -79,14 +86,20 @@ FVector ATarget3D::BallisticMovement()
 	return (-CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p + FVector(0.0, 0.0, -G * M)) / M;
 }
 
-void ATarget3D::AerodynamicalRotation(const FRotator& TargetRotation)
+void ATarget3D::AerodynamicalRotation(const FRotator& TargetRotation, float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
+	if (CurrentRotation != TargetRotation)
+	{
+		FRotator DeltaRotation = FMath::RInterpConstantTo(CurrentRotation, TargetRotation, DeltaTime, RotationSpeed);
 
-	FRotator DeltaRotation = FMath::RInterpConstantTo(CurrentRotation, TargetRotation, FMath::DegreesToRadians(RotationSpeed) * GetWorld()->DeltaTimeSeconds);
+		//FRotator NewRotation = FMath::Lerp(CurrentRotation, TargetRotation, FMath::Clamp(RotationSpeed * DeltaTime, 0.0f, 1.0f));
 
-	FRotator NewRotation = FMath::Lerp(CurrentRotation, DeltaRotation, FMath::Clamp(RotationSpeed * GetWorld()->DeltaTimeSeconds, 0.0f, 1.0f));
-
-	SetActorRotation(NewRotation);
+		SetActorRotation(DeltaRotation);//NewRotation);
+	}
+	else
+	{
+		bRotate = false;
+	}
 }
 
