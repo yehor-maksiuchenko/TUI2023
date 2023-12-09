@@ -28,7 +28,8 @@ void ATarget3D::BeginPlay()
 	else
 	{
 		ToLocation = TargetPath[0];
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartLocation, ToLocation));
+		ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetPath[0]));
 	}
 	
 	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, (StartRot.Vector()).ToString());
@@ -49,15 +50,14 @@ void ATarget3D::Tick(float DeltaTime)
 	{
 		float dVelocity = Velocity * DeltaTime;
 		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);
-		if (FVector::Dist(GetActorLocation(), ToLocation) <= dVelocity)
+		if (FVector::Dist(GetActorLocation(), TargetPath[0]) <= dVelocity)
 		{
-			if (ToLocation != TargetPath.Last())
+			if (TargetPath[0] != TargetPath.Last())
 			{
 				SetActorLocation(ToLocation);
 				//SetActorRotation(UKismetMathLibrary::FindLookAtRotation(ToLocation, TargetPath[1]));
 				ToLocation = TargetPath[1];
 				TargetPath.RemoveAt(0);
-				bRotate = true;
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached a point: ") + GetActorLocation().ToString());
 			}
 			else
@@ -70,9 +70,11 @@ void ATarget3D::Tick(float DeltaTime)
 		}
 		if (bRotate)
 		{
-			AerodynamicalRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ToLocation), DeltaTime);
-			//AddActorLocalRotation((UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ToLocation) - GetActorRotation()).GetNormalized() * DeltaTime * RotationSpeed);
+			ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
 		}
+		AerodynamicalRotation(DeltaTime);
+		//AddActorLocalRotation((UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ToLocation) - GetActorRotation()).GetNormalized() * DeltaTime * RotationSpeed);
+		
 	}
 	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(1.0f / DeltaTime));
 }
@@ -86,20 +88,20 @@ FVector ATarget3D::BallisticMovement()
 	return (-CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p + FVector(0.0, 0.0, -G * M)) / M;
 }
 
-void ATarget3D::AerodynamicalRotation(const FRotator& TargetRotation, float DeltaTime)
+void ATarget3D::AerodynamicalRotation(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
-	if (CurrentRotation != TargetRotation)
+	if (CurrentRotation != ToRotation)
 	{
-		FRotator DeltaRotation = FMath::RInterpConstantTo(CurrentRotation, TargetRotation, DeltaTime, RotationSpeed);
+		bRotate = true;
+		float DotProduct = FMath::Abs(ToRotation.Quaternion().GetNormalized() | CurrentRotation.Quaternion().GetNormalized());
+		float AngularDifference = FMath::RadiansToDegrees(2.0f * FMath::Acos(DotProduct));
 
-		//FRotator NewRotation = FMath::Lerp(CurrentRotation, TargetRotation, FMath::Clamp(RotationSpeed * DeltaTime, 0.0f, 1.0f));
-
-		SetActorRotation(DeltaRotation);//NewRotation);
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f)));
+		FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), ToRotation.Quaternion(), FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f));
+		//FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), ToRotation.Quaternion(), (DeltaTime * RotationSpeed) / AngularDifference);
+		SetActorRotation(ResultRotation);
 	}
-	else
-	{
-		bRotate = false;
-	}
+	else bRotate = false;
 }
 

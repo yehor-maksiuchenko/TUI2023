@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Containers/Array.h" 
+#include "Math/Quat.h"
 #include "Math/Vector.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Target3D.generated.h"
@@ -33,7 +34,7 @@ public:
 	bool bRotate = false;
 
 	FVector BallisticMovement();
-	void AerodynamicalRotation(const FRotator& TargetRotation, float DeltaTime);
+	void AerodynamicalRotation(float DeltaTime);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
@@ -54,7 +55,7 @@ public:
 		int Velocity = 200;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int RotationSpeed = 1000;
+		int RotationSpeed = 100;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FVector> TargetPath;
@@ -64,5 +65,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector ToLocation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FRotator ToRotation;
 
 };
