@@ -27,12 +27,9 @@ void ATarget3D::BeginPlay()
 	}
 	else
 	{
-		ToLocation = TargetPath[0];
 		ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetPath[0]));
 	}
-	
-	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, (StartRot.Vector()).ToString());
 }
 
 void ATarget3D::Tick(float DeltaTime)
@@ -54,18 +51,13 @@ void ATarget3D::Tick(float DeltaTime)
 		{
 			if (TargetPath[0] != TargetPath.Last())
 			{
-				SetActorLocation(ToLocation);
-				//SetActorRotation(UKismetMathLibrary::FindLookAtRotation(ToLocation, TargetPath[1]));
-				ToLocation = TargetPath[1];
+				SetActorLocation(TargetPath[0]);
 				TargetPath.RemoveAt(0);
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached a point: ") + GetActorLocation().ToString());
+				//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached a point: ") + GetActorLocation().ToString());
 			}
 			else
 			{
-				Velocity = 0;
-				TargetPath.RemoveAt(0);
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached last point"));
-				bRotate = false;
+				Destroy();
 			}
 		}
 		if (bRotate)
@@ -73,10 +65,8 @@ void ATarget3D::Tick(float DeltaTime)
 			ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
 		}
 		AerodynamicalRotation(DeltaTime);
-		//AddActorLocalRotation((UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ToLocation) - GetActorRotation()).GetNormalized() * DeltaTime * RotationSpeed);
 		
 	}
-	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(1.0f / DeltaTime));
 }
 
 FVector ATarget3D::BallisticMovement()
@@ -96,10 +86,7 @@ void ATarget3D::AerodynamicalRotation(float DeltaTime)
 		bRotate = true;
 		float DotProduct = FMath::Abs(ToRotation.Quaternion().GetNormalized() | CurrentRotation.Quaternion().GetNormalized());
 		float AngularDifference = FMath::RadiansToDegrees(2.0f * FMath::Acos(DotProduct));
-
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f)));
 		FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), ToRotation.Quaternion(), FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f));
-		//FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), ToRotation.Quaternion(), (DeltaTime * RotationSpeed) / AngularDifference);
 		SetActorRotation(ResultRotation);
 	}
 	else bRotate = false;

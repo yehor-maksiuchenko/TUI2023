@@ -55,16 +55,13 @@ public:
 		int Velocity = 200;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int RotationSpeed = 100;
+		int RotationSpeed = 720;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FVector> TargetPath;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector FromLocation = FVector(0, 0, 0);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector ToLocation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FRotator ToRotation;
