@@ -25,6 +25,11 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void MoveUp(float Value);
+	void MoveRight(float Value);
+	void Zoom(float Value);
+	void Bounds();
+
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		USceneComponent* MainComp;
@@ -39,7 +44,7 @@ protected:
 		float MaxZoom = 2000.0f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		float MinZoom = 20.0f;
+		float MinZoom = 10.0f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		float ZoomSpeed = 2.0f;
@@ -48,7 +53,19 @@ protected:
 		float MoveSpeed = 20.0f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		float CurCur = 20.0f;
+		float CurCur = 0.0f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		float MinHeight = 30.0f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		float MaxHeight = 800.0f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		float MinWidth = -500.0f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		float MaxWidth = 500.0f;
 
 private:
 	UPROPERTY()

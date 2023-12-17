@@ -32,6 +32,11 @@ void ACameraPawn2D::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	Bounds();
+
+	FVector InterpolatedLocation = UKismetMathLibrary::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, MoveSpeed);
+	SetActorLocation(InterpolatedLocation);
+
 	const float InterpolatedZoom = UKismetMathLibrary::FInterpTo(CameraBoom->TargetArmLength, TargetZoom, DeltaTime, ZoomSpeed);
 	CameraBoom->TargetArmLength = InterpolatedZoom;
 }
@@ -40,5 +45,42 @@ void ACameraPawn2D::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	PlayerInputComponent->BindAxis("MoveUp", this, &ACameraPawn2D::MoveUp);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ACameraPawn2D::MoveRight);
+	PlayerInputComponent->BindAxis("Zoom", this, &ACameraPawn2D::Zoom);
+}
+
+void ACameraPawn2D::MoveUp(float Value)
+{
+	if (Value)
+	{
+		TargetLocation += CameraBoom->GetUpVector() * Value * MoveSpeed;
+	}
+}
+
+void ACameraPawn2D::MoveRight(float Value)
+{
+	if (Value)
+	{
+		TargetLocation += CameraBoom->GetRightVector() * Value * MoveSpeed;
+	}
+}
+
+void ACameraPawn2D::Zoom(float Value)
+{
+	if (Value)
+	{
+		const float Zoom = Value * 100.0f;
+		TargetZoom = FMath::Clamp(Zoom + TargetZoom, MinZoom, MaxZoom);
+	}
+}
+
+void ACameraPawn2D::Bounds()
+{
+	if (TargetLocation.Y > MaxWidth) TargetLocation.Y = MaxWidth;
+	if (TargetLocation.Y < MinWidth) TargetLocation.Y = MinWidth;
+
+	if (TargetLocation.Z > MaxHeight) TargetLocation.Z = MaxHeight;
+	if (TargetLocation.Z < MinHeight) TargetLocation.Z = MinHeight;
 }
 
