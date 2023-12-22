@@ -30,7 +30,7 @@ void ATarget2D::BeginPlay()
 		SetActorLocation(FVector(StartLocation.X, 0.0f, StartLocation.Z));
 		StartRotation = FRotator(StartRotation.Pitch, 0.0f, 0.0f);
 		SetActorRotation(StartRotation);
-		CurrentVelocity = StartRotation.Vector() * Velocity;
+		CurrentVelocity = GetActorForwardVector() * Velocity;
 	}
 	else
 	{
@@ -45,14 +45,14 @@ void ATarget2D::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, (-CurrentVelocity.GetSafeNormal()).ToString());
 	FVector old_pos = GetActorLocation();
-	if (isBallistic && bMove)
+	if (isBallistic)
 	{
 		t += DeltaTime;
 		CurrentVelocity += BallisticMovement() * DeltaTime;
 		SetActorLocation(old_pos + CurrentVelocity);
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
 	}
-	else if(bMove)
+	else
 	{
 		float dVelocity = Velocity * DeltaTime;
 		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);

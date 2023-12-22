@@ -45,7 +45,7 @@ public:
 		FVector StartLocation = FVector(1900, 0, 280);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator StartRotation = FRotator(-40, 61, 0);
+		FRotator StartRotation = FRotator(-40, 0, 0);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int Velocity = 200;
