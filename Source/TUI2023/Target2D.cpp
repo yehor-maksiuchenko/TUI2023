@@ -27,10 +27,9 @@ void ATarget2D::BeginPlay()
 	if (isBallistic)
 	{
 		//bMove = false;
-		SetActorLocation(FVector(StartLocation.X, 0.0f, StartLocation.Z));
-		StartRotation = FRotator(StartRotation.Pitch, 0.0f, 0.0f);
+		SetActorLocation(FVector(StartLocation.X, 10.0f, StartLocation.Z));
 		SetActorRotation(StartRotation);
-		CurrentVelocity = GetActorForwardVector() * Velocity;
+		CurrentVelocity = StartRotation.Vector() * Velocity;
 	}
 	else
 	{
@@ -43,11 +42,10 @@ void ATarget2D::BeginPlay()
 void ATarget2D::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, (-CurrentVelocity.GetSafeNormal()).ToString());
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(Velocity));
 	FVector old_pos = GetActorLocation();
 	if (isBallistic)
 	{
-		t += DeltaTime;
 		CurrentVelocity += BallisticMovement() * DeltaTime;
 		SetActorLocation(old_pos + CurrentVelocity);
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
@@ -84,7 +82,9 @@ FVector ATarget2D::BallisticMovement()
 	FVector gravity = FVector(0.0, 0.0, -G * M);
 	FVector force = drag + gravity;
 	FVector acc = force / M;*/
-	return (-CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p + FVector(0.0, 0.0, -G * M)) / M;
+	
+	return ((-CurrentVelocity).GetSafeNormal() * K * CurrentVelocity.SizeSquared2D() * p + FVector(0.0, 0.0, -G * M)) / M;
+
 }
 
 void ATarget2D::AerodynamicalRotation(float DeltaTime)

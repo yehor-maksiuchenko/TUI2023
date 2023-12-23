@@ -42,13 +42,13 @@ public:
 		bool isBallistic = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector StartLocation = FVector(1900, 0, 280);
+		FVector StartLocation = FVector(1900, 10, 280);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator StartRotation = FRotator(-40, 0, 0);
+		FRotator StartRotation = FRotator(400, 0, 0);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int Velocity = 200;
+		float Velocity = 200;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int RotationSpeed = 720;
