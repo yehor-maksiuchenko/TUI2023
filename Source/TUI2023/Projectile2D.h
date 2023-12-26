@@ -35,8 +35,8 @@ public:
 	void AerodynamicalRotation(float DeltaTime);
 
 	float FlightTime(float u, float angle, float y);
-
-	//void ParabolaPoint(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
+	void ParabolaPoint(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
+	void ParabolaParabola(float u1, float u2, float angle2, float x_0, float y_0, float& result_angle, float Step, float& CollisionTime, float& WaitTime, TArray<float>& CollisionPosition);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
