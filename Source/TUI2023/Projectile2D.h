@@ -6,15 +6,15 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "Target2D.generated.h"
+#include "Projectile2D.generated.h"
 
 UCLASS()
-class TUI2023_API ATarget2D : public AActor
+class TUI2023_API AProjectile2D : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	ATarget2D();
+	AProjectile2D();
 
 protected:
 	virtual void BeginPlay() override;
@@ -34,7 +34,9 @@ public:
 	FVector BallisticMovement();
 	void AerodynamicalRotation(float DeltaTime);
 
-	void ParabolaPoint(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
+	float FlightTime(float u, float angle, float y);
+
+	//void ParabolaPoint(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;

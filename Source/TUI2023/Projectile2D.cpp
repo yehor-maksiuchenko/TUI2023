@@ -1,6 +1,6 @@
-#include "Target2D.h"
+#include "Projectile2D.h"
 
-ATarget2D::ATarget2D()
+AProjectile2D::AProjectile2D()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -19,7 +19,7 @@ ATarget2D::ATarget2D()
 	TargetPath.Add(FVector(-540, 0, 100));
 }
 
-void ATarget2D::BeginPlay()
+void AProjectile2D::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -41,7 +41,7 @@ void ATarget2D::BeginPlay()
 	}
 }
 
-void ATarget2D::Tick(float DeltaTime)
+void AProjectile2D::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -77,7 +77,7 @@ void ATarget2D::Tick(float DeltaTime)
 	}
 }
 
-FVector ATarget2D::BallisticMovement()
+FVector AProjectile2D::BallisticMovement()
 {
 	float t = GetWorld()->GetTimeSeconds() - TrajectoryStartMoment;
 
@@ -95,7 +95,7 @@ FVector ATarget2D::BallisticMovement()
 	return FVector(X, Y, Z);
 }
 
-void ATarget2D::AerodynamicalRotation(float DeltaTime)
+void AProjectile2D::AerodynamicalRotation(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
 
@@ -113,16 +113,11 @@ void ATarget2D::AerodynamicalRotation(float DeltaTime)
 	else bRotate = false;
 }
 
-float Rounding(float x, float r) {
-	return FMath::RoundToFloat(x / r) * r;
-}
-
-float TimeOfFlight(float u, float angle, float y) {
+float AProjectile2D::FlightTime(float u, float angle, float y) {
 	double u_y = u * FMath::Sin(FMath::DegreesToRadians(angle));
 	double D = u_y * u_y + 2 * G * y;
 	double x1 = (-u_y + FMath::Sqrt(D)) / (-G);
 	double x2 = (-u_y - FMath::Sqrt(D)) / (-G);
 
 	return x2;
-
 }
