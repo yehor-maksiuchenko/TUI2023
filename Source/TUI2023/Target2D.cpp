@@ -6,12 +6,17 @@ ATarget2D::ATarget2D()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
 	RootComponent = Mesh;
+	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
+	Sphere->SetSphereRadius(100);
+	Sphere->SetRelativeLocation(FVector(0, 0, 0));
+	Sphere->SetupAttachment(RootComponent);
 
 	Mesh->SetWorldScale3D(FVector(1.f));
 
-	TargetPath.Add(FVector(-150.0f, -200.0f, 210.0f));
-	TargetPath.Add(FVector(680, 820, 300));
-	TargetPath.Add(FVector(-1480, 550, 1040));
+	TargetPath.Add(FVector(1230, 0, 620));
+	TargetPath.Add(FVector(-2180, 0, 530));
+	TargetPath.Add(FVector(-3480, 0, 680));
+	TargetPath.Add(FVector(-540, 0, 100));
 }
 
 void ATarget2D::BeginPlay()
@@ -23,13 +28,10 @@ void ATarget2D::BeginPlay()
 		GetWorld()->SpawnActor<AActor>(MarkerClass, TargetPath[i], FRotator(0, 0, 0));
 	}
 
-	
 	if (isBallistic)
 	{
-		//bMove = false;
-		SetActorLocation(FVector(StartLocation.X, 10.0f, StartLocation.Z));
+		SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));
 		SetActorRotation(StartRotation);
-		CurrentVelocity = StartRotation.Vector() * Velocity;
 	}
 	else
 	{
@@ -42,12 +44,11 @@ void ATarget2D::BeginPlay()
 void ATarget2D::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(Velocity));
+
 	FVector old_pos = GetActorLocation();
 	if (isBallistic)
 	{
-		CurrentVelocity += BallisticMovement() * DeltaTime;
-		SetActorLocation(old_pos + CurrentVelocity);
+		SetActorLocation(BallisticMovement());
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
 	}
 	else
@@ -78,26 +79,50 @@ void ATarget2D::Tick(float DeltaTime)
 
 FVector ATarget2D::BallisticMovement()
 {
-	/*FVector drag = -CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p;
-	FVector gravity = FVector(0.0, 0.0, -G * M);
-	FVector force = drag + gravity;
-	FVector acc = force / M;*/
-	
-	return ((-CurrentVelocity).GetSafeNormal() * K * CurrentVelocity.SizeSquared2D() * p + FVector(0.0, 0.0, -G * M)) / M;
+	float t = GetWorld()->GetTimeSeconds() - TrajectoryStartMoment;
 
+	float Pitch = StartRotation.Pitch * PI / 180.0f;
+	float Yaw = StartRotation.Yaw * PI / 180.0f;
+
+	float V0x = Velocity * FMath::Cos(Pitch) * FMath::Cos(Yaw);
+	float V0y = Velocity * FMath::Cos(Pitch) * FMath::Sin(Yaw);
+	float V0z = Velocity * FMath::Sin(Pitch);
+
+	float X = V0x * t + StartLocation.X;
+	float Y = V0y * t + StartLocation.Y;
+	float Z = V0z * t - 0.5f * t * t + StartLocation.Z;
+
+	return FVector(X, Y, Z);
 }
 
 void ATarget2D::AerodynamicalRotation(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
+
+
 	if (CurrentRotation != ToRotation)
 	{
+		
 		bRotate = true;
 		float DotProduct = FMath::Abs(ToRotation.Quaternion().GetNormalized() | CurrentRotation.Quaternion().GetNormalized());
 		float AngularDifference = FMath::RadiansToDegrees(2.0f * FMath::Acos(DotProduct));
 		FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), ToRotation.Quaternion(), FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f));
 		SetActorRotation(ResultRotation);
+		
 	}
 	else bRotate = false;
 }
 
+float Rounding(float x, float r) {
+	return FMath::RoundToFloat(x / r) * r;
+}
+
+float TimeOfFlight(float u, float angle, float y) {
+	double u_y = u * FMath::Sin(FMath::DegreesToRadians(angle));
+	double D = u_y * u_y + 2 * G * y;
+	double x1 = (-u_y + FMath::Sqrt(D)) / (-G);
+	double x2 = (-u_y - FMath::Sqrt(D)) / (-G);
+
+	return x2;
+
+}
