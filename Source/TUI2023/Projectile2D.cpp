@@ -48,8 +48,11 @@ void AProjectile2D::Tick(float DeltaTime)
 	FVector old_pos = GetActorLocation();
 	if (isBallistic)
 	{
-		SetActorLocation(BallisticMovement());
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
+		if (bMove)
+		{
+			SetActorLocation(BallisticMovement());
+			SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
+		}
 	}
 	else
 	{
@@ -80,7 +83,7 @@ void AProjectile2D::Tick(float DeltaTime)
 FVector AProjectile2D::BallisticMovement()
 {
 	float t = GetWorld()->GetTimeSeconds() - TrajectoryStartMoment;
-	t *= -10;
+	//t *= 10;
 
 	float Pitch = StartRotation.Pitch * PI / 180.0f;
 	float Yaw = StartRotation.Yaw * PI / 180.0f;
@@ -140,10 +143,6 @@ void AProjectile2D::ParabolaPoint(float u, float x, float y, float& angle1, floa
 
 		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
 		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
-
-
-
-
 	}
 	else if (D == 0) {
 		float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
@@ -154,10 +153,6 @@ void AProjectile2D::ParabolaPoint(float u, float x, float y, float& angle1, floa
 
 		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
 		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
-
-
-
-
 	}
 	else {
 		angle1 = -1;
@@ -167,17 +162,16 @@ void AProjectile2D::ParabolaPoint(float u, float x, float y, float& angle1, floa
 	}
 }
 
-void AProjectile2D::ParabolaParabola(float u1, float u2, float angle2, float x_0, float y_0, float& result_angle, float Step, float& CollisionTime, float& WaitTime, TArray<float>& CollisionPosition)
+void AProjectile2D::PredictTrajectory(float v1 /*Self velocity*/, float v2 /*Target velocity*/, float angle2 /*Target Pitch*/, float x_0, float y_0, float& result_angle, float Step, /*float& CollisionTime,*/ float& WaitTime/*, TArray<float>& CollisionPosition*/)
 {
-	float u_x2 = u2 * FMath::Cos(FMath::DegreesToRadians(angle2));
-	float u_y2 = u2 * FMath::Sin(FMath::DegreesToRadians(angle2));
-	float Time = FlightTime(u2, angle2, y_0);
-	CollisionTime = -1;
+	float u_x2 = v2 * FMath::Cos(FMath::DegreesToRadians(angle2));
+	float u_y2 = v2 * FMath::Sin(FMath::DegreesToRadians(angle2));
+	float Time = FlightTime(v2, angle2, y_0);
+	//CollisionTime = -1;
 	WaitTime = -1;
-	CollisionPosition[0] = -1;
-	CollisionPosition[1] = -1;
-
-
+	result_angle = -1;
+	//CollisionPosition[0] = -1;
+	//CollisionPosition[1] = -1;
 
 	for (float t = 0; t < Time; t += Step) {
 		float s_x = u_x2 * t;
@@ -186,24 +180,22 @@ void AProjectile2D::ParabolaParabola(float u1, float u2, float angle2, float x_0
 		float y = y_0 + s_y;
 
 		float angle1, angle2, time1, time2;
-		ParabolaPoint(u1, x, y, angle1, angle2, time1, time2);
+		ParabolaPoint(v1, x, y, angle1, angle2, time1, time2);
 		if (time1 <= t) {
 			result_angle = angle1;
-			CollisionTime = t;
+			//CollisionTime = t;
 			WaitTime = t - time1;
-			CollisionPosition[0] = x;
-			CollisionPosition[1] = y;
+			//CollisionPosition[0] = x;
+			//CollisionPosition[1] = y;
 			break;
 		}
 		if (time2 <= t) {
 			result_angle = angle2;
-			CollisionTime = t;
-			WaitTime = t - time1;
-			CollisionPosition[0] = x;
-			CollisionPosition[1] = y;
+			//CollisionTime = t;
+			WaitTime = t - time2;
+			//CollisionPosition[0] = x;
+			//CollisionPosition[1] = y;
 			break;
 		}
-
 	}
-
 }
