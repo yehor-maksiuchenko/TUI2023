@@ -11,6 +11,7 @@
 			"AdditionalDependencies": [
 				"Engine"
 			]
+<<<<<<< HEAD
 		}
 	],
 	"Plugins": [
@@ -21,6 +22,8 @@
 			"SupportedTargetPlatforms": [
 				"Win64"
 			]
+=======
+>>>>>>> master
 		}
 	]
 }
