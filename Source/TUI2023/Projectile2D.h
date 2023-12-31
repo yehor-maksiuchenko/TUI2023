@@ -17,6 +17,9 @@ class TUI2023_API AProjectile2D : public AActor
 public:	
 	AProjectile2D();
 
+	UFUNCTION(BlueprintCallable, Category = "Custom Initialization")
+		void InitializeProjectile2D(bool isBallistic_local, FVector StartLocation_local, FRotator StartRotation_local, FRotator DesiredRotation_local, float Velocity_local, float RotationSpeed_local, float WaitTime_local, TArray<FVector> Path, ATarget2D* TargetRef);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -24,7 +27,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	float G = 9.8f; //9.8f
-	const float pi = 3.14159265359; 
 	FVector CurrentVelocity;
 
 	bool bRotate = false;
@@ -37,7 +39,7 @@ public:
 	void ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
 
 	UFUNCTION(BlueprintCallable)
-	bool PredictTrajectory2D(float v1, float v2, float SelfStartRotation, float TargetStartRotation, TArray <float> SelfStartPosition, TArray <float> TargetStartPosition, float& ResultAngle, float Step, float& CollisionTime, float& WaitTime, TArray<float>& CollisionPosition);
+	bool PredictTrajectory2D(float v1, float v2, float SelfStartRotation, float TargetStartRotation, TArray <float> SelfStartPosition, TArray <float> TargetStartPosition, float& ResultAngle, float Step);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
@@ -46,7 +48,7 @@ public:
 		class USphereComponent* Sphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bMove = false;
+		bool bWait = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool isBallistic = true;
@@ -61,16 +63,16 @@ public:
 		float Velocity = 350.f; // 350.f
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int RotationSpeed = 200;
+		float RotationSpeed = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float WaitTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FVector> TargetPath;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector FromLocation = FVector(0, 0, 0);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator ToRotation;
+		FRotator DesiredRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TSubclassOf<AActor> MarkerClass;
@@ -80,4 +82,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		ATarget2D* Target;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float CollisionTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<float> CollisionPosition{0, 0};
 };

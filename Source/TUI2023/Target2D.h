@@ -16,6 +16,9 @@ class TUI2023_API ATarget2D : public AActor
 public:
 	ATarget2D();
 
+	UFUNCTION(BlueprintCallable, Category="Custom Initialization")
+		void InitializeTarget2D(bool isBallistic_local, FVector StartLocation_local, FRotator StartRotation_local, float Velocity_local, float RotationSpeed_local, TArray<FVector> Path);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -26,7 +29,6 @@ public:
 	float G = 9.8f; //9.8f
 	float K = 5.f; //5.f
 	float p = 1.2255f; // 1.2255f
-	float pi = 3.14159265359;
 	FVector CurrentVelocity;
 
 	bool bRotate = false;
@@ -56,7 +58,7 @@ public:
 		float Velocity = 300.f; // 300.f
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int RotationSpeed = 200;
+		float RotationSpeed = 200.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FVector> TargetPath;

@@ -19,6 +19,16 @@ ATarget2D::ATarget2D()
 	TargetPath.Add(FVector(-540, 0, 100));
 }
 
+void ATarget2D::InitializeTarget2D(bool isBallistic_local, FVector StartLocation_local, FRotator StartRotation_local, float Velocity_local, float RotationSpeed_local, TArray<FVector> Path)
+{
+	isBallistic = isBallistic_local;
+	StartLocation = StartLocation_local;
+	StartRotation = StartRotation_local;
+	Velocity = Velocity_local;
+	RotationSpeed = RotationSpeed_local;
+	if (!isBallistic_local) TargetPath = Path;
+}
+
 void ATarget2D::BeginPlay()
 {
 	Super::BeginPlay();
