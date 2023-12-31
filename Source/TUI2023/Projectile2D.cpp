@@ -126,76 +126,105 @@ float AProjectile2D::FlightTime(float u, float angle, float y) {
 	return x2;
 }
 
-void AProjectile2D::ParabolaPoint(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2)
+float AProjectile2D::MaxHeight(float u)
 {
-	float a = -G * 0.5 * FMath::Square(x / u);
-	float b = x;
-	float c = a - y;
-
-	float D = FMath::Square(b) - 4 * a * c;
-
-	if (D > 0) {
-		float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
-		float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
-
-		angle1 = FMath::Atan(t1) * 180 / pi;
-		angle2 = FMath::Atan(t2) * 180 / pi;
-
-		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
-		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
-	}
-	else if (D == 0) {
-		float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
-		float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
-
-		angle1 = FMath::Atan(t1) * 180 / pi;
-		angle2 = FMath::Atan(t2) * 180 / pi;
-
-		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
-		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
-	}
-	else {
-		angle1 = -1;
-		angle2 = -1;
-		time1 = -1;
-		time2 = -1;
-	}
+	float t = 0.5f * FlightTime(u, 90, 0);
+	return (u * t - 0.5f * G * t * t);
 }
 
-void AProjectile2D::PredictTrajectory(float v1 /*Self velocity*/, float v2 /*Target velocity*/, float angle2 /*Target Pitch*/, float x_0, float y_0, float& result_angle, float Step, /*float& CollisionTime,*/ float& WaitTime/*, TArray<float>& CollisionPosition*/)
+void AProjectile2D::ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float &time1, float &time2) {
+    float a = -G * 0.5 * FMath::Square(x / u);
+    float b = x;
+    float c = a - y;
+    float D = b * b - 4 * a * c;
+
+    if (D > 0) 
+	{
+        float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
+        float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
+
+        angle1 = FMath::Atan(t1) * 180 / pi;
+        angle2 = FMath::Atan(t2) * 180 / pi;
+
+        time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
+        time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
+    }
+    else if (D == 0) 
+	{
+        float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
+        float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
+
+        angle1 = FMath::Atan(t1) * 180 / pi;
+        angle2 = FMath::Atan(t2) * 180 / pi;
+
+        time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
+        time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
+    }
+    else {
+        angle1 = -90;
+        angle2 = -90;
+        time1 = -1;
+        time2 = -1;
+    }
+}
+// float v1 /*Self velocity*/, float v2 /*Target velocity*/, float angle2 /*Target Pitch*/, float x_0, float y_0, float& result_angle, float Step, /*float& CollisionTime,*/ float& WaitTime/*, TArray<float>& CollisionPosition*/)
+bool AProjectile2D::PredictTrajectory2D(float v1, float v2, float SelfStartRotation, float TargetStartRotation, TArray <float> SelfStartPosition, TArray <float> TargetStartPosition, float& ResultAngle, float Step, float& CollisionTime, float& WaitTime, TArray<float>& CollisionPosition)
 {
-	float u_x2 = v2 * FMath::Cos(FMath::DegreesToRadians(angle2));
-	float u_y2 = v2 * FMath::Sin(FMath::DegreesToRadians(angle2));
-	float Time = FlightTime(v2, angle2, y_0);
+	float x_0 = TargetStartPosition[0] - SelfStartPosition[0];
+	float y_0 = TargetStartPosition[1] - SelfStartPosition[1];
+
+	float u_x2 = v2 * FMath::Cos(FMath::DegreesToRadians(TargetStartRotation));
+	float u_y2 = v2 * FMath::Sin(FMath::DegreesToRadians(TargetStartRotation));
+	float Time = FlightTime(v2, TargetStartRotation, TargetStartPosition[1]);
+	float MaxH = MaxHeight(v1);
+	ResultAngle = -90;
 	//CollisionTime = -1;
 	WaitTime = -1;
-	result_angle = -1;
 	//CollisionPosition[0] = -1;
 	//CollisionPosition[1] = -1;
 
-	for (float t = 0; t < Time; t += Step) {
+	for (float t = 0; t < Time; t += Step) 
+	{
 		float s_x = u_x2 * t;
 		float s_y = u_y2 * t - 0.5 * G * t * t;
 		float x = x_0 + s_x;
 		float y = y_0 + s_y;
 
-		float angle1, angle2, time1, time2;
-		ParabolaPoint(v1, x, y, angle1, angle2, time1, time2);
-		if (time1 <= t) {
-			result_angle = angle1;
-			//CollisionTime = t;
+		if (y > MaxH) continue;
+
+		float angle1, TargetStartRotation, time1, time2;
+		ParabolaPoint2D(v1, x, y, angle1, TargetStartRotation, time1, time2);
+		if (time1 <= t && angle1 != -90) 
+		{
+			float Rotation = abs(SelfStartRotation - angle1);
+			float RotationTime = Rotation / RotationSpeed;
 			WaitTime = t - time1;
-			//CollisionPosition[0] = x;
-			//CollisionPosition[1] = y;
-			break;
+			if (WaitTime >= RotationTime) 
+			{
+				ResultAngle = angle1;
+				//CollisionTime = t;
+				//CollisionPosition[0] = x;
+				//CollisionPosition[1] = y;
+				break;
+			}
+
 		}
-		if (time2 <= t) {
-			result_angle = angle2;
-			//CollisionTime = t;
+		if (time2 <= t && TargetStartRotation != -90) 
+		{
+			float Rotation = abs(SelfStartRotation - TargetStartRotation);
+			float RotationTime = Rotation / RotationSpeed;
 			WaitTime = t - time2;
-			//CollisionPosition[0] = x;
-			//CollisionPosition[1] = y;
-			break;
+			if (WaitTime >= RotationTime) 
+			{
+				ResultAngle = TargetStartRotation;
+				//CollisionTime = t;
+				//CollisionPosition[0] = x;
+				//CollisionPosition[1] = y;
+				break;
+			}
 		}
+
 	}
+	if (ResultAngle != -90) return false;
+	return true;
 }

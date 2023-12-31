@@ -24,7 +24,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	float G = 9.8f; //9.8f
-	float pi = 3.14159265359; 
+	const float pi = 3.14159265359; 
 	FVector CurrentVelocity;
 
 	bool bRotate = false;
@@ -33,10 +33,11 @@ public:
 	void AerodynamicalRotation(float DeltaTime);
 
 	float FlightTime(float u, float angle, float y);
-	void ParabolaPoint(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
+	float MaxHeight(float u);
+	void ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
 
 	UFUNCTION(BlueprintCallable)
-		void PredictTrajectory(float v1, float v2, float angle2, float x_0, float y_0, float& result_angle, float Step, /*float& CollisionTime,*/ float& WaitTime/*, TArray<float>& CollisionPosition*/);
+	bool PredictTrajectory2D(float v1, float v2, float SelfStartRotation, float TargetStartRotation, TArray <float> SelfStartPosition, TArray <float> TargetStartPosition, float& ResultAngle, float Step, float& CollisionTime, float& WaitTime, TArray<float>& CollisionPosition);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
