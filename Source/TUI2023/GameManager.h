@@ -31,10 +31,10 @@ public:
 
 
 	UFUNCTION(BlueprintPure, meta = (Step = 0.1))
-	bool ParabolaParabola2D(FVector ProjectilePosition, FRotator ProjectileRotation, float ProjectileVelocity, float RotationSpeed, FVector TargetPosition, FRotator TargetRotation, float TargetVelocity, float Step, FRotator& ResultRotation, float& WaitTime, float& CollisionTime, FVector& CollisionPosition);
+	bool ParabolaParabola2D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
 
 	UFUNCTION(BlueprintPure, meta = (Step = 0.1))
-	bool ParabolaParabola3D(FVector ProjectileLocation, FRotator ProjectileRotation, float YawRotationSpeed, float PitchRotationSpeed, float ProjectileVelocity, FVector TargetLocation, FRotator TargetRotation, float TargetVelocity, FRotator& ResultRotation, float Step, float& CollisionTime, float& WaitTime);
+	bool ParabolaParabola3D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime);
 
 	UFUNCTION(BlueprintPure)
 	void SetPredictionResults(FRotator DesiredRotation, float WaitTime, FProjectileParams& ProjectileParams);

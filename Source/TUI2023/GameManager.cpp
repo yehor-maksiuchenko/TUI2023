@@ -79,22 +79,22 @@ void UGameManager::ParabolaPoint3D(float u, FVector Position, float& horizontal_
 	ParabolaPoint2D(u, TargetLocationD[0], TargetLocationD[1], vertical_angle1, vertical_angle2, time1, time2);
 }
 
-bool UGameManager::ParabolaParabola2D(FVector ProjectilePosition, FRotator ProjectileRotation, float ProjectileVelocity, float RotationSpeed, FVector TargetPosition, FRotator TargetRotation, float TargetVelocity, float Step, FRotator& ResultRotation, float& WaitTime, float& CollisionTime, FVector& CollisionPosition)
+bool UGameManager::ParabolaParabola2D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition)
 {
 	// position => 0:-:1
-	float ProjectilePitch = ProjectileRotation.Pitch;
-	float TargetPitch = TargetRotation.Pitch;
+	float ProjectilePitch = ProjectileParams.StartRotation.Pitch;
+	float TargetPitch = TargetParams.StartRotation.Pitch;
 
-	float x_0 = TargetPosition.X - ProjectilePosition.X;
-	float y_0 = TargetPosition.Z - ProjectilePosition.Z;
+	float x_0 = TargetParams.StartLocation.X - ProjectileParams.StartLocation.X;
+	float y_0 = TargetParams.StartLocation.Z - ProjectileParams.StartLocation.Z;
 
-	float u_x2 = TargetVelocity * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
-	float u_y2 = TargetVelocity * FMath::Sin(FMath::DegreesToRadians(TargetPitch));
-	float Time = FlightTime(TargetVelocity, TargetPitch, TargetPosition.Z);
-	float MaxH = MaxHeight(ProjectileVelocity);
-	ResultRotation = FRotator(-90.f, 0, 0);
+	float u_x2 = TargetParams.Velocity * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
+	float u_y2 = TargetParams.Velocity * FMath::Sin(FMath::DegreesToRadians(TargetPitch));
+	float Time = FlightTime(TargetParams.Velocity, TargetPitch, TargetParams.StartLocation.Z);
+	float MaxH = MaxHeight(ProjectileParams.Velocity);
+	ProjectileParams.DesiredRotation = FRotator(-90.f, 0, 0);
 	CollisionTime = -1;
-	WaitTime = -1;
+	ProjectileParams.WaitTime = -1;
 	CollisionPosition.X = -1;
 	CollisionPosition.Z = -1;
 
@@ -107,15 +107,15 @@ bool UGameManager::ParabolaParabola2D(FVector ProjectilePosition, FRotator Proje
 		if (y > MaxH) continue;
 
 		float angle1, TargetPitch1, time1, time2;
-		ParabolaPoint2D(ProjectileVelocity, x, y, angle1, TargetPitch1, time1, time2);
+		ParabolaPoint2D(ProjectileParams.Velocity, x, y, angle1, TargetPitch1, time1, time2);
 		if (time1 <= t && angle1 != -90)
 		{
 			float Rotation = abs(ProjectilePitch - angle1);
-			float RotationTime = Rotation / RotationSpeed;
-			WaitTime = t - time1;
-			if (WaitTime >= RotationTime)
+			float RotationTime = Rotation / ProjectileParams.RotationSpeed;
+			ProjectileParams.WaitTime = t - time1;
+			if (ProjectileParams.WaitTime >= RotationTime)
 			{
-				ResultRotation = FRotator(angle1, 0, 0);
+				ProjectileParams.DesiredRotation = FRotator(angle1, 0, 0);
 				CollisionTime = t;
 				CollisionPosition.X = x;
 				CollisionPosition.Z = y;
@@ -126,11 +126,11 @@ bool UGameManager::ParabolaParabola2D(FVector ProjectilePosition, FRotator Proje
 		if (time2 <= t && TargetPitch1 != -90)
 		{
 			float Rotation = abs(ProjectilePitch - TargetPitch1);
-			float RotationTime = Rotation / RotationSpeed;
-			WaitTime = t - time2;
-			if (WaitTime >= RotationTime)
+			float RotationTime = Rotation / ProjectileParams.RotationSpeed;
+			ProjectileParams.WaitTime = t - time2;
+			if (ProjectileParams.WaitTime >= RotationTime)
 			{
-				ResultRotation = FRotator(TargetPitch1, 0, 0);
+				ProjectileParams.DesiredRotation = FRotator(TargetPitch1, 0, 0);
 				CollisionTime = t;
 				CollisionPosition.X = x;
 				CollisionPosition.Z = y;
@@ -143,24 +143,24 @@ bool UGameManager::ParabolaParabola2D(FVector ProjectilePosition, FRotator Proje
 	return false;
 }
 
-bool UGameManager::ParabolaParabola3D(FVector ProjectileLocation, FRotator ProjectileRotation, float YawRotationSpeed, float PitchRotationSpeed, float ProjectileVelocity, FVector TargetLocation, FRotator TargetRotation, float TargetVelocity, FRotator& ResultRotation, float Step, float& CollisionTime, float& WaitTime)
+bool UGameManager::ParabolaParabola3D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime)
 {
-	float ProjectileYaw = ProjectileRotation.Yaw;
-	float ProjectilePitch = ProjectileRotation.Pitch;
-	float TargetYaw = TargetRotation.Yaw;
-	float TargetPitch = TargetRotation.Pitch;
+	float ProjectileYaw = ProjectileParams.StartRotation.Yaw;
+	float ProjectilePitch = ProjectileParams.StartRotation.Pitch;
+	float TargetYaw = TargetParams.StartRotation.Yaw;
+	float TargetPitch = TargetParams.StartRotation.Pitch;
 
-	float x_0 = TargetLocation[0] - ProjectileLocation[0];
-	float y_0 = TargetLocation[1] - ProjectileLocation[1];
-	float z_0 = TargetLocation[2] - ProjectileLocation[2];
-	float u_x2 = TargetVelocity * FMath::Cos(FMath::DegreesToRadians(TargetYaw)) * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
-	float u_y2 = TargetVelocity * FMath::Cos(FMath::DegreesToRadians(90 - TargetYaw)) * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
-	float u_z2 = TargetVelocity * FMath::Sin(FMath::DegreesToRadians(TargetPitch));
-	float Time = FlightTime(TargetVelocity, TargetPitch, TargetLocation[2]);
-	float MaxH = MaxHeight(ProjectileVelocity);
+	float x_0 = TargetParams.StartLocation[0] - ProjectileParams.StartLocation[0];
+	float y_0 = TargetParams.StartLocation[1] - ProjectileParams.StartLocation[1];
+	float z_0 = TargetParams.StartLocation[2] - ProjectileParams.StartLocation[2];
+	float u_x2 = TargetParams.Velocity * FMath::Cos(FMath::DegreesToRadians(TargetYaw)) * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
+	float u_y2 = TargetParams.Velocity * FMath::Cos(FMath::DegreesToRadians(90 - TargetYaw)) * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
+	float u_z2 = TargetParams.Velocity * FMath::Sin(FMath::DegreesToRadians(TargetPitch));
+	float Time = FlightTime(TargetParams.Velocity, TargetPitch, TargetParams.StartLocation[2]);
+	float MaxH = MaxHeight(ProjectileParams.Velocity);
 	float result_vertical_angle = -90;
 	CollisionTime = -1;
-	WaitTime = -1;
+	ProjectileParams.WaitTime = -1;
 
 	for (float t = Step; t < Time; t += Step) {
 
@@ -171,16 +171,16 @@ bool UGameManager::ParabolaParabola3D(FVector ProjectileLocation, FRotator Proje
 
 		if (CurrentPosition[2] > MaxH) continue;
 		float horizontal_angle, vertical_angle1, TargetPitch1, time1, time2;
-		ParabolaPoint3D(ProjectileVelocity, CurrentPosition, horizontal_angle, vertical_angle1, TargetPitch1, time1, time2);
+		ParabolaPoint3D(ProjectileParams.Velocity, CurrentPosition, horizontal_angle, vertical_angle1, TargetPitch1, time1, time2);
 		if (time1 <= t && time1 > 0) {
-			WaitTime = t - time1;
+			ProjectileParams.WaitTime = t - time1;
 			float RotationH = FMath::Min(abs(horizontal_angle - ProjectileYaw), (360 - horizontal_angle + ProjectileYaw));
-			float RotationHTime = RotationH / YawRotationSpeed;
+			float RotationHTime = RotationH / ProjectileParams.LauncherRotationSpeedYaw;
 			float RotationV = abs(ProjectilePitch - vertical_angle1);
-			float RotationVTime = RotationV / PitchRotationSpeed;
+			float RotationVTime = RotationV / ProjectileParams.LauncherRotationSpeedPitch;
 			float RotationTime = FMath::Max(RotationHTime, RotationVTime);
-			if (RotationTime <= WaitTime) {
-				ResultRotation = FRotator(vertical_angle1, horizontal_angle, 0);
+			if (RotationTime <= ProjectileParams.WaitTime) {
+				ProjectileParams.DesiredRotation = FRotator(vertical_angle1, horizontal_angle, 0);
 				CollisionTime = t;
 				break;
 			}
@@ -188,14 +188,14 @@ bool UGameManager::ParabolaParabola3D(FVector ProjectileLocation, FRotator Proje
 
 		}
 		if (time2 <= t && time2 > 0) {
-			WaitTime = t - time2;
+			ProjectileParams.WaitTime = t - time2;
 			float RotationH = FMath::Min(abs(horizontal_angle - ProjectileYaw), (360 - abs(horizontal_angle - ProjectileYaw)));
-			float RotationHTime = RotationH / YawRotationSpeed;
+			float RotationHTime = RotationH / ProjectileParams.LauncherRotationSpeedYaw;
 			float RotationV = abs(ProjectilePitch - TargetPitch1);
-			float RotationVTime = RotationV / PitchRotationSpeed;
+			float RotationVTime = RotationV / ProjectileParams.LauncherRotationSpeedPitch;
 			float RotationTime = FMath::Max(RotationHTime, RotationVTime);
-			if (RotationTime <= WaitTime) {
-				ResultRotation = FRotator(TargetPitch1, horizontal_angle, 0);
+			if (RotationTime <= ProjectileParams.WaitTime) {
+				ProjectileParams.DesiredRotation = FRotator(TargetPitch1, horizontal_angle, 0);
 				CollisionTime = t;
 				break;
 			}

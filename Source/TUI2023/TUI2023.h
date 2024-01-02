@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/StaticMesh.h"
 #include "TUI2023.generated.h"
 
 USTRUCT(BlueprintType)
@@ -36,6 +37,18 @@ public:
 	float LauncherRotationSpeedPitch;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	UStaticMesh* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	float SizeK = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	float FuelTank = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	float FuelExpense = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	bool isBallistic;
 };
 
@@ -59,6 +72,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	TArray<FVector> Path = {};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	UStaticMesh* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	float SizeK = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	float FuelTank = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	float FuelExpense = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	bool isBallistic;

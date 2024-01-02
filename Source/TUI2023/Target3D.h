@@ -40,9 +40,6 @@ public:
 		class USphereComponent* Sphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bMove;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool isBallistic;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -40,10 +40,7 @@ public:
 		class USphereComponent* Sphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bMove = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool isBallistic = true;
+		bool isBallistic;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector StartLocation;
