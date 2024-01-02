@@ -21,19 +21,22 @@ public:
 	float Velocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	bool isBallistic;
+	float RotationSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	FRotator DesiredRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	float RotationSpeedYaw;
+	float WaitTime = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	float RotationSpeedPitch;
+	float LauncherRotationSpeedYaw;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	float G = 9.8f;
+	float LauncherRotationSpeedPitch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	bool isBallistic;
 };
 
 USTRUCT(BlueprintType)
@@ -49,18 +52,15 @@ public:
 	FRotator StartRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	bool isBallistic;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	float Velocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	float RotationSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	TArray<FVector> Path;
+	TArray<FVector> Path = {};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	float G = 9.8f;
+	bool isBallistic;
 };
 

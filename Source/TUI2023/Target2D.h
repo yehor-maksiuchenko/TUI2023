@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SphereComponent.h"
+#include "TUI2023.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Target2D.generated.h"
 
@@ -16,8 +17,8 @@ class TUI2023_API ATarget2D : public AActor
 public:
 	ATarget2D();
 
-	UFUNCTION(BlueprintCallable, Category="Custom Initialization")
-		void InitializeTarget2D(bool isBallistic_local, FVector StartLocation_local, FRotator StartRotation_local, float Velocity_local, float RotationSpeed_local, TArray<FVector> Path);
+	UFUNCTION(BlueprintCallable, Category="Custom Initialization", meta = (AutoCreateRefTerm = "Path", g = 9.8, SimulationSpeed = 1.0))
+		void InitializeTarget2D(FTargetParams TargetParams, float g, float SimulationSpeed);
 
 protected:
 	virtual void BeginPlay() override;
@@ -25,10 +26,6 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	float M = 100.f; // 100.f
-	float G = 9.8f; //9.8f
-	float K = 5.f; //5.f
-	float p = 1.2255f; // 1.2255f
 	FVector CurrentVelocity;
 
 	bool bRotate = false;
@@ -49,29 +46,29 @@ public:
 		bool isBallistic = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector StartLocation = FVector(1000.f, 0.f, 930.f);
+		FVector StartLocation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator StartRotation = FRotator(100.f, 0, 0);
+		FRotator StartRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float Velocity = 300.f; // 300.f
+	float Velocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float RotationSpeed = 200.f;
+	float RotationSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TArray<FVector> TargetPath;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector FromLocation = FVector(0, 0, 0);
+	TArray<FVector> Path = {};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FRotator ToRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TSubclassOf<AActor> MarkerClass;
+	TSubclassOf<AActor> MarkerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float TrajectoryStartMoment;
+	float G = 9.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SimulationSpeedMultiplier = 1.f;
 };

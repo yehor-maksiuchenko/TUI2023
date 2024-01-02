@@ -12,52 +12,45 @@ AProjectile2D::AProjectile2D()
 	Sphere->SetupAttachment(RootComponent);
 
 	Mesh->SetWorldScale3D(FVector(1.f));
-
-	TargetPath.Add(FVector(1230, 0, 620));
-	TargetPath.Add(FVector(-2180, 0, 530));
-	TargetPath.Add(FVector(-3480, 0, 680));
-	TargetPath.Add(FVector(-540, 0, 100));
 }
 
-void AProjectile2D::InitializeProjectile2D(bool isBallistic_local, FVector StartLocation_local, FRotator StartRotation_local, FRotator DesiredRotation_local, float Velocity_local, float RotationSpeed_local, float WaitTime_local, TArray<FVector> Path, ATarget2D* TargetRef)
+void AProjectile2D::InitializeProjectile2D(FProjectileParams ProjectileParams, ATarget2D* TargetRef, float g, float SimulationSpeed)
 {
-	isBallistic = isBallistic_local;
-	StartLocation = StartLocation_local;
-	StartRotation = StartRotation_local;
-	Velocity = Velocity_local;
-	RotationSpeed = RotationSpeed_local;
-	if (isBallistic_local)
+	isBallistic = ProjectileParams.isBallistic;
+	StartLocation = ProjectileParams.StartLocation;
+	StartRotation = ProjectileParams.StartRotation;
+	Velocity = ProjectileParams.Velocity;
+	RotationSpeed = ProjectileParams.RotationSpeed;
+	SimulationSpeedMultiplier = SimulationSpeed;
+	G = g;
+	SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));
+	SetActorRotation(StartRotation);
+	if (isBallistic)
 	{
-		WaitTime = WaitTime_local;
-		DesiredRotation = DesiredRotation_local;
+		WaitTime = ProjectileParams.WaitTime;
+		DesiredRotation = ProjectileParams.DesiredRotation;
 	}
 	else
 	{
-		TargetPath = Path;
 		Target = TargetRef;
+		Path.Add(Target->GetActorLocation());
+		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 	}
-	if (WaitTime_local > 0.f) bWait = true;
+	if (ProjectileParams.WaitTime > 0.f) bWait = true;
+
+	else
+	{
+		
+	}
 }
 
 void AProjectile2D::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (int i = 0; i < TargetPath.Num(); i++)
+	for (int i = 0; i < Path.Num(); i++)
 	{
-		GetWorld()->SpawnActor<AActor>(MarkerClass, TargetPath[i], FRotator(0, 0, 0));
-	}
-
-	if (isBallistic)
-	{
-		SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));
-		SetActorRotation(StartRotation);
-	}
-	else
-	{
-		SetActorLocation(StartLocation);
-		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetPath[0]));
+		GetWorld()->SpawnActor<AActor>(MarkerClass, Path[i], FRotator(0, 0, 0));
 	}
 }
 
@@ -72,23 +65,23 @@ void AProjectile2D::Tick(float DeltaTime)
 		{
 			if (GetActorRotation() != DesiredRotation)
 			{
-				AerodynamicalRotation(DeltaTime);
+				AerodynamicalRotation(DeltaTime * SimulationSpeedMultiplier);
 			}
-			if (GetGameTimeSinceCreation() >= WaitTime) bWait = false;
+			if (GetGameTimeSinceCreation() * SimulationSpeedMultiplier >= WaitTime * SimulationSpeedMultiplier) bWait = false;
 		}
 		SetActorLocation(BallisticMovement());
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
 	}
 	else
 	{
-		float dVelocity = Velocity * DeltaTime;
+		float dVelocity = Velocity * DeltaTime * SimulationSpeedMultiplier;
 		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);
-		if (FVector::Dist(GetActorLocation(), TargetPath[0]) <= dVelocity)
+		if (FVector::Dist(GetActorLocation(), Path[0]) <= dVelocity)
 		{
-			if (TargetPath[0] != TargetPath.Last())
+			if (Path[0] != Path.Last())
 			{
-				SetActorLocation(TargetPath[0]);
-				TargetPath.RemoveAt(0);
+				SetActorLocation(Path[0]);
+				Path.RemoveAt(0);
 				//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached a point: ") + GetActorLocation().ToString());
 			}
 			else
@@ -98,17 +91,16 @@ void AProjectile2D::Tick(float DeltaTime)
 		}
 		if (bRotate)
 		{
-			DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
+			DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 		}
-		AerodynamicalRotation(DeltaTime);
+		AerodynamicalRotation(DeltaTime * SimulationSpeedMultiplier);
 
 	}
 }
 
 FVector AProjectile2D::BallisticMovement()
 {
-	float t = GetWorld()->GetTimeSeconds() - TrajectoryStartMoment;
-	//t *= 10;
+	float t = GetGameTimeSinceCreation() * SimulationSpeedMultiplier;
 
 	float Pitch = StartRotation.Pitch * PI / 180.0f;
 	float Yaw = StartRotation.Yaw * PI / 180.0f;
@@ -140,125 +132,4 @@ void AProjectile2D::AerodynamicalRotation(float DeltaTime)
 		
 	}
 	else bRotate = false;
-}
-
-float AProjectile2D::FlightTime(float u, float angle, float y) {
-	float u_y = u * FMath::Sin(FMath::DegreesToRadians(angle));
-	float D = u_y * u_y + 2 * G * y;
-	float x1 = (-u_y + FMath::Sqrt(D)) / (-G);
-	float x2 = (-u_y - FMath::Sqrt(D)) / (-G);
-
-	return x2;
-}
-
-float AProjectile2D::MaxHeight(float u)
-{
-	float t = 0.5f * FlightTime(u, 90, 0);
-	return (u * t - 0.5f * G * t * t);
-}
-
-void AProjectile2D::ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float &time1, float &time2) {
-
-	float x_0 = x;
-	x = FMath::Abs(x);
-	float a = -G * 0.5 * FMath::Square(x / u);
-	float b = x;
-	float c = a - y;
-	float D = FMath::Square(b) - 4 * a * c;
-
-	if (D > 0) {
-		float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
-		float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
-
-		angle1 = FMath::Atan(t1) * 180 / PI;
-		angle2 = FMath::Atan(t2) * 180 / PI;
-
-		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
-		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
-
-	}
-	else if (D == 0) {
-
-		float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
-		float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
-
-		angle1 = FMath::Atan(t1) * 180 / PI;
-		angle2 = FMath::Atan(t2) * 180 / PI;
-
-		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
-		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
-	}
-	else {
-
-		angle1 = -90;
-		angle2 = -90;
-		time1 = -1;
-		time2 = -1;
-	}
-	if (x_0 < 0) {
-		angle1 = 180 - angle1;
-		angle2 = 180 - angle2;
-	}
-}
-// float v1 /*Self velocity*/, float v2 /*Target velocity*/, float angle2 /*Target Pitch*/, float x_0, float y_0, float& result_angle, float Step, /*float& CollisionTime,*/ float& WaitTime/*, TArray<float>& CollisionPosition*/)
-bool AProjectile2D::PredictTrajectory2D(float v1, float v2, float SelfStartRotation, float TargetStartRotation, TArray<float> SelfStartPosition, TArray <float> TargetStartPosition, float& ResultAngle, float Step)
-{
-	float x_0 = TargetStartPosition[0] - SelfStartPosition[0];
-	float y_0 = TargetStartPosition[1] - SelfStartPosition[1];
-
-	float u_x2 = v2 * FMath::Cos(FMath::DegreesToRadians(TargetStartRotation));
-	float u_y2 = v2 * FMath::Sin(FMath::DegreesToRadians(TargetStartRotation));
-	float Time = FlightTime(v2, TargetStartRotation, TargetStartPosition[1]);
-	float MaxH = MaxHeight(v1);
-	ResultAngle = -90;
-	CollisionTime = -1;
-	WaitTime = -1;
-	CollisionPosition[0] = -1;
-	CollisionPosition[1] = -1;
-
-	for (float t = 0; t < Time; t += Step) 
-	{
-		float s_x = u_x2 * t;
-		float s_y = u_y2 * t - 0.5 * G * t * t;
-		float x = x_0 + s_x;
-		float y = y_0 + s_y;
-		UE_LOG(LogTemp, Warning, TEXT("%f %f"), x, y);
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(x) + TEXT(" ") + FString::SanitizeFloat(y));
-		if (y > MaxH) continue;
-
-		float angle1, TargetStartRotation, time1, time2;
-		ParabolaPoint2D(v1, x, y, angle1, TargetStartRotation, time1, time2);
-		if (time1 <= t && angle1 != -90) 
-		{
-			float Rotation = abs(SelfStartRotation - angle1);
-			float RotationTime = Rotation / RotationSpeed;
-			WaitTime = t - time1;
-			if (WaitTime >= RotationTime) 
-			{
-				ResultAngle = angle1;
-				CollisionTime = t;
-				CollisionPosition[0] = x;
-				CollisionPosition[1] = y;
-				break;
-			}
-
-		}
-		if (time2 <= t && TargetStartRotation != -90) 
-		{
-			float Rotation = abs(SelfStartRotation - TargetStartRotation);
-			float RotationTime = Rotation / RotationSpeed;
-			WaitTime = t - time2;
-			if (WaitTime >= RotationTime) 
-			{
-				ResultAngle = TargetStartRotation;
-				CollisionTime = t;
-				CollisionPosition[0] = x;
-				CollisionPosition[1] = y;
-				break;
-			}
-		}
-
-	}
-	if (CollisionTime > 0) return true;
-	return false;
 }

@@ -6,6 +6,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SphereComponent.h"
 #include "Target3D.h"
+#include "TUI2023.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Projectile3D.generated.h"
 
@@ -17,8 +18,8 @@ class TUI2023_API AProjectile3D : public AActor
 public:
 	AProjectile3D();
 
-	UFUNCTION(BlueprintCallable, Category = "Custom Initialization")
-	void InitializeProjectile3D(bool isBallistic_local, FVector StartLocation_local, FRotator StartRotation_local, FRotator DesiredRotation_local, float Velocity_local, float RotationSpeed_local, float WaitTime_local, TArray<FVector> Path, ATarget3D* TargetRef);
+	UFUNCTION(BlueprintCallable, Category = "Custom Initialization", meta = (g = 9.8, SimulationSpeed = 1.0))
+	void InitializeProjectile3D(FProjectileParams ProjectileParams, ATarget3D* TargetRef, float g, float SimulationSpeed);
 
 protected:
 	virtual void BeginPlay() override;
@@ -26,20 +27,10 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	float G = 9.8f; //9.8f
-	FVector CurrentVelocity;
-
 	bool bRotate = false;
 
 	FVector BallisticMovement();
 	void AerodynamicalRotation(float DeltaTime);
-
-	float FlightTime(float u, float angle, float y);
-	float MaxHeight(float u);
-	void ParabolaPoint3D(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
-
-	UFUNCTION(BlueprintCallable)
-	bool PredictTrajectory3D(float v1, float v2, float SelfStartRotation, float TargetStartRotation, TArray <float> SelfStartPosition, TArray <float> TargetStartPosition, float& ResultAngle, float Step);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UStaticMeshComponent* Mesh;
@@ -48,34 +39,34 @@ public:
 	class USphereComponent* Sphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bWait = false;
+	bool bWait;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool isBallistic = true;
+	bool isBallistic;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FVector StartLocation = FVector(-2230.f, 0.f, 390.f);
+	FVector StartLocation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FRotator StartRotation = FRotator(40.f, 0, 0);
+	FRotator StartRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Velocity = 350.f; // 350.f
+	float Velocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RotationSpeed = 200.f;
+	float RotationSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RotationSpeedAlpha = 0.f;
+	float RotationSpeedAlpha;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RotationSpeedBeta =  0.f;
+	float RotationSpeedBeta;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float WaitTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FVector> TargetPath;
+	TArray<FVector> Path = {};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FRotator DesiredRotation;
@@ -84,14 +75,11 @@ public:
 	TSubclassOf<AActor> MarkerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float TrajectoryStartMoment;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ATarget3D* Target;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CollisionTime;
+	float G = 9.8f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<float> CollisionPosition{ 0, 0 };
+	float SimulationSpeedMultiplier = 1.f;
 };

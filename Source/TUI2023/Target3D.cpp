@@ -11,25 +11,33 @@ ATarget3D::ATarget3D()
 	Mesh->SetRelativeLocation(FVector(0, 0, 0));
 	Mesh->SetRelativeRotation(FRotator(0, 0, 0));
 
-	TargetPath.Add(FVector(-150.0f, -200.0f, 210.0f));
-	TargetPath.Add(FVector(680, 820, 300));
-	TargetPath.Add(FVector(-1480, 550, 1040));
+}
+
+void ATarget3D::InitializeTarget3D(FTargetParams TargetParams, float g, float SimulationSpeed)
+{
+	isBallistic = TargetParams.isBallistic;
+	StartLocation = TargetParams.StartLocation;
+	StartRotation = TargetParams.StartRotation;
+	Velocity = TargetParams.Velocity;
+	RotationSpeed = TargetParams.RotationSpeed;
+	SimulationSpeedMultiplier = SimulationSpeed;
+	G = g;
+	SetActorLocation(StartLocation);
+	if (isBallistic)
+	{
+		SetActorRotation(StartRotation);
+	}
+	else
+	{
+		Path = TargetParams.Path;
+		ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
+		SetActorRotation(ToRotation);
+	}
 }
 
 void ATarget3D::BeginPlay()
 {
 	Super::BeginPlay();
-	SetActorLocation(StartLocation);
-	if (isBallistic)
-	{
-		SetActorRotation(StartRotation);
-		CurrentVelocity = StartRotation.Vector() * Velocity;
-	}
-	else
-	{
-		ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetPath[0]));
-	}
 }
 
 void ATarget3D::Tick(float DeltaTime)
@@ -38,21 +46,19 @@ void ATarget3D::Tick(float DeltaTime)
 	FVector old_pos = GetActorLocation();
 	if (isBallistic)
 	{
-		t += DeltaTime;
-		CurrentVelocity += BallisticMovement() * DeltaTime;
-		SetActorLocation(old_pos + CurrentVelocity);
+		SetActorLocation(BallisticMovement());
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
 	}
 	else
 	{
-		float dVelocity = Velocity * DeltaTime;
+		float dVelocity = Velocity * DeltaTime * SimulationSpeedMultiplier;
 		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);
-		if (FVector::Dist(GetActorLocation(), TargetPath[0]) <= dVelocity)
+		if (FVector::Dist(GetActorLocation(), Path[0]) <= dVelocity)
 		{
-			if (TargetPath[0] != TargetPath.Last())
+			if (Path[0] != Path.Last())
 			{
-				SetActorLocation(TargetPath[0]);
-				TargetPath.RemoveAt(0);
+				SetActorLocation(Path[0]);
+				Path.RemoveAt(0);
 				//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached a point: ") + GetActorLocation().ToString());
 			}
 			else
@@ -62,20 +68,29 @@ void ATarget3D::Tick(float DeltaTime)
 		}
 		if (bRotate)
 		{
-			ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
+			ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 		}
-		AerodynamicalRotation(DeltaTime);
+		AerodynamicalRotation(DeltaTime * SimulationSpeedMultiplier);
 		
 	}
 }
 
 FVector ATarget3D::BallisticMovement()
 {
-	/*FVector drag = -CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p;
-	FVector gravity = FVector(0.0, 0.0, -G * M);
-	FVector force = drag + gravity;
-	FVector acc = force / M;*/
-	return (-CurrentVelocity.GetSafeNormal() * K * CurrentVelocity.SizeSquared() * p + FVector(0.0, 0.0, -G * M)) / M;
+	float t = GetGameTimeSinceCreation() * SimulationSpeedMultiplier;
+
+	float Pitch = StartRotation.Pitch * PI / 180.0f;
+	float Yaw = StartRotation.Yaw * PI / 180.0f;
+
+	float V0x = Velocity * FMath::Cos(Pitch) * FMath::Cos(Yaw);
+	float V0y = Velocity * FMath::Cos(Pitch) * FMath::Sin(Yaw);
+	float V0z = Velocity * FMath::Sin(Pitch);
+
+	float X = V0x * t + StartLocation.X;
+	float Y = V0y * t + StartLocation.Y;
+	float Z = V0z * t - 0.5f * t * t * G + StartLocation.Z;
+
+	return FVector(X, Y, Z);
 }
 
 void ATarget3D::AerodynamicalRotation(float DeltaTime)

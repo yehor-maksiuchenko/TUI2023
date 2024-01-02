@@ -12,42 +12,33 @@ ATarget2D::ATarget2D()
 	Sphere->SetupAttachment(RootComponent);
 
 	Mesh->SetWorldScale3D(FVector(1.f));
-
-	TargetPath.Add(FVector(1230, 0, 620));
-	TargetPath.Add(FVector(-2180, 0, 530));
-	TargetPath.Add(FVector(-3480, 0, 680));
-	TargetPath.Add(FVector(-540, 0, 100));
 }
 
-void ATarget2D::InitializeTarget2D(bool isBallistic_local, FVector StartLocation_local, FRotator StartRotation_local, float Velocity_local, float RotationSpeed_local, TArray<FVector> Path)
+void ATarget2D::InitializeTarget2D(FTargetParams TargetParams, float g, float SimulationSpeed)
 {
-	isBallistic = isBallistic_local;
-	StartLocation = StartLocation_local;
-	StartRotation = StartRotation_local;
-	Velocity = Velocity_local;
-	RotationSpeed = RotationSpeed_local;
-	if (!isBallistic_local) TargetPath = Path;
+	isBallistic = TargetParams.isBallistic;
+	StartLocation = TargetParams.StartLocation;
+	StartRotation = TargetParams.StartRotation;
+	Velocity = TargetParams.Velocity;
+	RotationSpeed = TargetParams.RotationSpeed;
+	SimulationSpeedMultiplier = SimulationSpeed;
+	G = g;
+	SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));
+	SetActorRotation(StartRotation);
+	if (!isBallistic)
+	{
+		Path = TargetParams.Path;
+		ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
+	}
 }
 
 void ATarget2D::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (int i = 0; i < TargetPath.Num(); i++)
+	for (int i = 0; i < Path.Num(); i++)
 	{
-		GetWorld()->SpawnActor<AActor>(MarkerClass, TargetPath[i], FRotator(0, 0, 0));
-	}
-
-	if (isBallistic)
-	{
-		SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));
-		SetActorRotation(StartRotation);
-	}
-	else
-	{
-		SetActorLocation(StartLocation);
-		ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(StartLocation, TargetPath[0]));
+		GetWorld()->SpawnActor<AActor>(MarkerClass, Path[i], FRotator(0, 0, 0));
 	}
 }
 
@@ -63,14 +54,14 @@ void ATarget2D::Tick(float DeltaTime)
 	}
 	else
 	{
-		float dVelocity = Velocity * DeltaTime;
+		float dVelocity = Velocity * DeltaTime * SimulationSpeedMultiplier;
 		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);
-		if (FVector::Dist(GetActorLocation(), TargetPath[0]) <= dVelocity)
+		if (FVector::Dist(GetActorLocation(), Path[0]) <= dVelocity)
 		{
-			if (TargetPath[0] != TargetPath.Last())
+			if (Path[0] != Path.Last())
 			{
-				SetActorLocation(TargetPath[0]);
-				TargetPath.RemoveAt(0);
+				SetActorLocation(Path[0]);
+				Path.RemoveAt(0);
 				//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Reached a point: ") + GetActorLocation().ToString());
 			}
 			else
@@ -80,17 +71,16 @@ void ATarget2D::Tick(float DeltaTime)
 		}
 		if (bRotate)
 		{
-			ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetPath[0]);
+			ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 		}
-		AerodynamicalRotation(DeltaTime);
+		AerodynamicalRotation(DeltaTime * SimulationSpeedMultiplier);
 
 	}
 }
 
 FVector ATarget2D::BallisticMovement()
 {
-	float t = GetWorld()->GetTimeSeconds() - TrajectoryStartMoment;
-	//t *= 10;
+	float t = GetGameTimeSinceCreation() * SimulationSpeedMultiplier;
 
 	float Pitch = StartRotation.Pitch * PI / 180.0f;
 	float Yaw = StartRotation.Yaw * PI / 180.0f;

@@ -7,6 +7,7 @@
 #include "Containers/Array.h" 
 #include "Math/Quat.h"
 #include "Math/Vector.h"
+#include "TUI2023.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Target3D.generated.h"
 
@@ -18,18 +19,14 @@ class TUI2023_API ATarget3D : public AActor
 public:	
 	ATarget3D();
 
+	UFUNCTION(BlueprintCallable, Category = "Custom Initialization", meta = (AutoCreateRefTerm = "Path", g = 9.8, SimulationSpeed = 1.0))
+	void InitializeTarget3D(FTargetParams TargetParams, float g, float SimulationSpeed);
+
 protected:
 	virtual void BeginPlay() override;
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	float t = 0;
-
-	float M = 100.0;
-	float G = 9.8;
-	float K = 5; //change this later
-	float p = 1.2255;
-	FVector CurrentVelocity;
 
 	bool bRotate = false;
 
@@ -39,31 +36,36 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bMove = true;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+		class USphereComponent* Sphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool isBallistic = false;
+		bool bMove;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector StartLocation = FVector(460, -350, 80);
+		bool isBallistic;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator StartRotation = FRotator(40, 61, 0);
+		FVector StartLocation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int Velocity = 200;
+		FRotator StartRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int RotationSpeed = 720;
+		float Velocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TArray<FVector> TargetPath;
+		float RotationSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector FromLocation = FVector(0, 0, 0);
+	TArray<FVector> Path = {};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FRotator ToRotation;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float G = 9.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SimulationSpeedMultiplier = 1.f;
 };

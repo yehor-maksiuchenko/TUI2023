@@ -1,25 +1,11 @@
 #include "GameManager.h"
 
-AGameManager::AGameManager()
+UGameManager::UGameManager()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
 
 }
 
-void AGameManager::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-void AGameManager::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-float AGameManager::FlightTime(float u, float angle, float y)
+float UGameManager::FlightTime(float u, float angle, float y)
 {
 	float u_y = u * FMath::Sin(FMath::DegreesToRadians(angle));
 	float D = u_y * u_y + 2 * G * y;
@@ -28,13 +14,13 @@ float AGameManager::FlightTime(float u, float angle, float y)
 	return x2;
 }
 
-float AGameManager::MaxHeight(float u)
+float UGameManager::MaxHeight(float u)
 {
 	float t = 0.5f * FlightTime(u, 90, 0);
 	return (u * t - 0.5f * G * t * t);
 }
 
-void AGameManager::ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2)
+void UGameManager::ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2)
 {
 	float x_0 = x;
 	x = FMath::Abs(x);
@@ -78,7 +64,7 @@ void AGameManager::ParabolaPoint2D(float u, float x, float y, float& angle1, flo
 	}
 }
 
-void AGameManager::ParabolaPoint3D(float u, FVector Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2)
+void UGameManager::ParabolaPoint3D(float u, FVector Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2)
 {
 	float x = Position.X;
 	float y = Position.Y;
@@ -93,17 +79,20 @@ void AGameManager::ParabolaPoint3D(float u, FVector Position, float& horizontal_
 	ParabolaPoint2D(u, TargetLocationD[0], TargetLocationD[1], vertical_angle1, vertical_angle2, time1, time2);
 }
 
-bool AGameManager::ParabolaParabola2D(FVector ProjectilePosition, float ProjectileRotation, float ProjectileVelocity, float RotationSpeed, FVector TargetPosition, float TargetRotation, float TargetVelocity, float Step, float& ResultAngle, float& WaitTime, float& CollisionTime, FVector& CollisionPosition)
+bool UGameManager::ParabolaParabola2D(FVector ProjectilePosition, FRotator ProjectileRotation, float ProjectileVelocity, float RotationSpeed, FVector TargetPosition, FRotator TargetRotation, float TargetVelocity, float Step, FRotator& ResultRotation, float& WaitTime, float& CollisionTime, FVector& CollisionPosition)
 {
 	// position => 0:-:1
+	float ProjectilePitch = ProjectileRotation.Pitch;
+	float TargetPitch = TargetRotation.Pitch;
+
 	float x_0 = TargetPosition.X - ProjectilePosition.X;
 	float y_0 = TargetPosition.Z - ProjectilePosition.Z;
 
-	float u_x2 = TargetVelocity * FMath::Cos(FMath::DegreesToRadians(TargetRotation));
-	float u_y2 = TargetVelocity * FMath::Sin(FMath::DegreesToRadians(TargetRotation));
-	float Time = FlightTime(TargetVelocity, TargetRotation, TargetPosition.Z);
+	float u_x2 = TargetVelocity * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
+	float u_y2 = TargetVelocity * FMath::Sin(FMath::DegreesToRadians(TargetPitch));
+	float Time = FlightTime(TargetVelocity, TargetPitch, TargetPosition.Z);
 	float MaxH = MaxHeight(ProjectileVelocity);
-	ResultAngle = -90;
+	ResultRotation = FRotator(-90.f, 0, 0);
 	CollisionTime = -1;
 	WaitTime = -1;
 	CollisionPosition.X = -1;
@@ -117,16 +106,16 @@ bool AGameManager::ParabolaParabola2D(FVector ProjectilePosition, float Projecti
 		float y = y_0 + s_y;
 		if (y > MaxH) continue;
 
-		float angle1, TargetRotation, time1, time2;
-		ParabolaPoint2D(ProjectileVelocity, x, y, angle1, TargetRotation, time1, time2);
+		float angle1, TargetPitch1, time1, time2;
+		ParabolaPoint2D(ProjectileVelocity, x, y, angle1, TargetPitch1, time1, time2);
 		if (time1 <= t && angle1 != -90)
 		{
-			float Rotation = abs(ProjectileRotation - angle1);
+			float Rotation = abs(ProjectilePitch - angle1);
 			float RotationTime = Rotation / RotationSpeed;
 			WaitTime = t - time1;
 			if (WaitTime >= RotationTime)
 			{
-				ResultAngle = angle1;
+				ResultRotation = FRotator(angle1, 0, 0);
 				CollisionTime = t;
 				CollisionPosition.X = x;
 				CollisionPosition.Z = y;
@@ -134,14 +123,14 @@ bool AGameManager::ParabolaParabola2D(FVector ProjectilePosition, float Projecti
 			}
 
 		}
-		if (time2 <= t && TargetRotation != -90)
+		if (time2 <= t && TargetPitch1 != -90)
 		{
-			float Rotation = abs(ProjectileRotation - TargetRotation);
+			float Rotation = abs(ProjectilePitch - TargetPitch1);
 			float RotationTime = Rotation / RotationSpeed;
 			WaitTime = t - time2;
 			if (WaitTime >= RotationTime)
 			{
-				ResultAngle = TargetRotation;
+				ResultRotation = FRotator(TargetPitch1, 0, 0);
 				CollisionTime = t;
 				CollisionPosition.X = x;
 				CollisionPosition.Z = y;
@@ -154,8 +143,13 @@ bool AGameManager::ParabolaParabola2D(FVector ProjectilePosition, float Projecti
 	return false;
 }
 
-bool AGameManager::ParabolaParabola3D(FVector ProjectileLocation, float ProjectileYaw, float ProjectilePitch, float YawRotationSpeed, float PitchRotationSpeed, float ProjectileVelocity, FVector TargetLocation, float TargetYaw, float TargetPitch, float TargetVelocity, float& ResultYaw, float& ResultPitch, float Step, float& CollisionTime, float& WaitTime)
+bool UGameManager::ParabolaParabola3D(FVector ProjectileLocation, FRotator ProjectileRotation, float YawRotationSpeed, float PitchRotationSpeed, float ProjectileVelocity, FVector TargetLocation, FRotator TargetRotation, float TargetVelocity, FRotator& ResultRotation, float Step, float& CollisionTime, float& WaitTime)
 {
+	float ProjectileYaw = ProjectileRotation.Yaw;
+	float ProjectilePitch = ProjectileRotation.Pitch;
+	float TargetYaw = TargetRotation.Yaw;
+	float TargetPitch = TargetRotation.Pitch;
+
 	float x_0 = TargetLocation[0] - ProjectileLocation[0];
 	float y_0 = TargetLocation[1] - ProjectileLocation[1];
 	float z_0 = TargetLocation[2] - ProjectileLocation[2];
@@ -173,14 +167,11 @@ bool AGameManager::ParabolaParabola3D(FVector ProjectileLocation, float Projecti
 		float s_x = u_x2 * t;
 		float s_y = u_y2 * t;
 		float s_z = u_z2 * t - 0.5 * t * t * G;
-		FVector CurrentPosition (x_0 + s_x, y_0 + s_y, z_0 + s_z);
-		//CurrentPosition[0] = x_0 + s_x;
-		//CurrentPosition[1] = y_0 + s_y;
-		//CurrentPosition[2] = z_0 + s_z;
+		FVector CurrentPosition(x_0 + s_x, y_0 + s_y, z_0 + s_z);
 
 		if (CurrentPosition[2] > MaxH) continue;
-		float horizontal_angle, vertical_angle1, TargetPitch, time1, time2;
-		ParabolaPoint3D(ProjectileVelocity, CurrentPosition, horizontal_angle, vertical_angle1, TargetPitch, time1, time2);
+		float horizontal_angle, vertical_angle1, TargetPitch1, time1, time2;
+		ParabolaPoint3D(ProjectileVelocity, CurrentPosition, horizontal_angle, vertical_angle1, TargetPitch1, time1, time2);
 		if (time1 <= t && time1 > 0) {
 			WaitTime = t - time1;
 			float RotationH = FMath::Min(abs(horizontal_angle - ProjectileYaw), (360 - horizontal_angle + ProjectileYaw));
@@ -189,8 +180,7 @@ bool AGameManager::ParabolaParabola3D(FVector ProjectileLocation, float Projecti
 			float RotationVTime = RotationV / PitchRotationSpeed;
 			float RotationTime = FMath::Max(RotationHTime, RotationVTime);
 			if (RotationTime <= WaitTime) {
-				ResultYaw = horizontal_angle;
-				ResultPitch = vertical_angle1;
+				ResultRotation = FRotator(vertical_angle1, horizontal_angle, 0);
 				CollisionTime = t;
 				break;
 			}
@@ -201,12 +191,11 @@ bool AGameManager::ParabolaParabola3D(FVector ProjectileLocation, float Projecti
 			WaitTime = t - time2;
 			float RotationH = FMath::Min(abs(horizontal_angle - ProjectileYaw), (360 - abs(horizontal_angle - ProjectileYaw)));
 			float RotationHTime = RotationH / YawRotationSpeed;
-			float RotationV = abs(ProjectilePitch - TargetPitch);
+			float RotationV = abs(ProjectilePitch - TargetPitch1);
 			float RotationVTime = RotationV / PitchRotationSpeed;
 			float RotationTime = FMath::Max(RotationHTime, RotationVTime);
 			if (RotationTime <= WaitTime) {
-				ResultYaw = horizontal_angle;
-				ResultPitch = TargetPitch;
+				ResultRotation = FRotator(TargetPitch1, horizontal_angle, 0);
 				CollisionTime = t;
 				break;
 			}
@@ -216,4 +205,66 @@ bool AGameManager::ParabolaParabola3D(FVector ProjectileLocation, float Projecti
 
 	if (CollisionTime > 0) return true;
 	return false;
+}
+
+void UGameManager::SetPredictionResults(FRotator DesiredRotation, float WaitTime, FProjectileParams& ProjectileParams)
+{
+	ProjectileParams.DesiredRotation = DesiredRotation;
+	ProjectileParams.WaitTime = WaitTime;
+}
+
+void UGameManager::ResetSimulation()
+{
+	if (Targets2D.Num() > 0)
+	{
+		for (int i = 0; i < Targets2D.Num(); i++) Targets2D[i]->Destroy();
+		Targets2D.Empty();
+	}
+	if (Targets3D.Num() > 0)
+	{
+		for (int i = 0; i < Targets3D.Num(); i++) Targets3D[i]->Destroy();
+		Targets3D.Empty();
+	}
+	if (Projectiles2D.Num() > 0)
+	{
+		for (int i = 0; i < Projectiles2D.Num(); i++) Projectiles2D[i]->Destroy();
+		Projectiles2D.Empty();
+	}
+	if (Projectiles3D.Num() > 0)
+	{
+		for (int i = 0; i < Projectiles3D.Num(); i++) Projectiles3D[i]->Destroy();
+		Projectiles3D.Empty();
+	}
+}
+
+void UGameManager::LoadSimulation2D()
+{
+	if ((TargetsToLoad.Num() == ProjectilesToLoad.Num()) && TargetsToLoad.Num() > 0)
+	{
+		for (int i = 0; i < TargetsToLoad.Num(); i++)
+		{
+			ATarget2D* T = GetWorld()->SpawnActor<ATarget2D>(FVector(0, 0, 0), FRotator(0, 0, 0));
+			T->InitializeTarget2D(TargetsToLoad[i], G, WorldSimulationSpeed);
+			AProjectile2D* P = GetWorld()->SpawnActor<AProjectile2D>(FVector(0, 0, 0), FRotator(0, 0, 0));
+			P->InitializeProjectile2D(ProjectilesToLoad[i], T, G, WorldSimulationSpeed);
+			Targets2D.Add(T);
+			Projectiles2D.Add(P);
+		}
+	}
+}
+
+void UGameManager::LoadSimulation3D()
+{
+	if ((TargetsToLoad.Num() == ProjectilesToLoad.Num()) && TargetsToLoad.Num() > 0)
+	{
+		for (int i = 0; i < TargetsToLoad.Num(); i++)
+		{
+			ATarget3D* T = GetWorld()->SpawnActor<ATarget3D>(FVector(0, 0, 0), FRotator(0, 0, 0));
+			T->InitializeTarget3D(TargetsToLoad[i], G, WorldSimulationSpeed);
+			AProjectile3D* P = GetWorld()->SpawnActor<AProjectile3D>(FVector(0, 0, 0), FRotator(0, 0, 0));
+			P->InitializeProjectile3D(ProjectilesToLoad[i], T, G, WorldSimulationSpeed);
+			Targets3D.Add(T);
+			Projectiles3D.Add(P);
+		}
+	}
 }
