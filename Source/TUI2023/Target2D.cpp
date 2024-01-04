@@ -7,11 +7,8 @@ ATarget2D::ATarget2D()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
 	RootComponent = Mesh;
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
-	Sphere->SetSphereRadius(100);
 	Sphere->SetRelativeLocation(FVector(0, 0, 0));
 	Sphere->SetupAttachment(RootComponent);
-
-	Mesh->SetWorldScale3D(FVector(1.f));
 }
 
 void ATarget2D::InitializeTarget2D(FTargetParams TargetParams, float g, float SimulationSpeed)
@@ -24,11 +21,15 @@ void ATarget2D::InitializeTarget2D(FTargetParams TargetParams, float g, float Si
 	SimulationSpeedMultiplier = SimulationSpeed;
 	G = g;
 	SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));
-	SetActorRotation(StartRotation);
+	SetActorRotation(FRotator(StartRotation.Pitch, 0.f, 0.f));
+	Mesh->SetWorldScale3D(FVector(TargetParams.SizeK));
+	Sphere->SetSphereRadius(TargetParams.SizeK);
+	FuelTank = TargetParams.FuelTank;
+	FuelExpense = TargetParams.FuelExpense;
 	if (!isBallistic)
 	{
 		Path = TargetParams.Path;
-		ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
+		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 	}
 }
 
@@ -45,6 +46,7 @@ void ATarget2D::BeginPlay()
 void ATarget2D::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	DeltaTime *= SimulationSpeedMultiplier;
 
 	FVector old_pos = GetActorLocation();
 	if (isBallistic)
@@ -54,10 +56,13 @@ void ATarget2D::Tick(float DeltaTime)
 	}
 	else
 	{
-		float dVelocity = Velocity * DeltaTime * SimulationSpeedMultiplier;
+		float dVelocity = Velocity * DeltaTime;
 		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);
+		FuelTank -= FuelExpense * DeltaTime;
+		if (FuelTank <= 0) { isBallistic = true; StartLocation = GetActorLocation(); StartRotation = GetActorRotation(); }
 		if (FVector::Dist(GetActorLocation(), Path[0]) <= dVelocity)
 		{
+			SetActorLocation(Path[0]);
 			if (Path[0] != Path.Last())
 			{
 				SetActorLocation(Path[0]);
@@ -66,14 +71,14 @@ void ATarget2D::Tick(float DeltaTime)
 			}
 			else
 			{
-				Destroy();
+				isBallistic = true; StartLocation = GetActorLocation(); StartRotation = GetActorRotation();
 			}
 		}
 		if (bRotate)
 		{
-			ToRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
+			DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 		}
-		AerodynamicalRotation(DeltaTime * SimulationSpeedMultiplier);
+		AerodynamicalRotation(DeltaTime);
 
 	}
 }
@@ -99,15 +104,13 @@ FVector ATarget2D::BallisticMovement()
 void ATarget2D::AerodynamicalRotation(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
-
-
-	if (CurrentRotation != ToRotation)
+	if (CurrentRotation != DesiredRotation)
 	{
 
 		bRotate = true;
-		float DotProduct = FMath::Abs(ToRotation.Quaternion().GetNormalized() | CurrentRotation.Quaternion().GetNormalized());
+		float DotProduct = FMath::Abs(DesiredRotation.Quaternion().GetNormalized() | CurrentRotation.Quaternion().GetNormalized());
 		float AngularDifference = FMath::RadiansToDegrees(2.0f * FMath::Acos(DotProduct));
-		FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), ToRotation.Quaternion(), FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f));
+		FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), DesiredRotation.Quaternion(), FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f));
 		SetActorRotation(ResultRotation);
 
 	}

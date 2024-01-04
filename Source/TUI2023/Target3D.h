@@ -7,6 +7,7 @@
 #include "Containers/Array.h" 
 #include "Math/Quat.h"
 #include "Math/Vector.h"
+#include "Components/SphereComponent.h"
 #include "TUI2023.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Target3D.generated.h"
@@ -19,7 +20,7 @@ class TUI2023_API ATarget3D : public AActor
 public:	
 	ATarget3D();
 
-	UFUNCTION(BlueprintCallable, Category = "Custom Initialization", meta = (AutoCreateRefTerm = "Path", g = 9.8, SimulationSpeed = 1.0))
+	UFUNCTION(BlueprintCallable, Category = "Custom Initialization")
 	void InitializeTarget3D(FTargetParams TargetParams, float g, float SimulationSpeed);
 
 protected:
@@ -58,11 +59,20 @@ public:
 	TArray<FVector> Path = {};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator ToRotation;
+	TSubclassOf<AActor> MarkerClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FRotator DesiredRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float G = 9.8f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SimulationSpeedMultiplier = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelTank = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelExpense = 0.f;
 };

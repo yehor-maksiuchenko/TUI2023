@@ -17,7 +17,7 @@ class TUI2023_API ATarget2D : public AActor
 public:
 	ATarget2D();
 
-	UFUNCTION(BlueprintCallable, Category="Custom Initialization", meta = (AutoCreateRefTerm = "Path", g = 9.8, SimulationSpeed = 1.0))
+	UFUNCTION(BlueprintCallable, Category="Custom Initialization")
 		void InitializeTarget2D(FTargetParams TargetParams, float g, float SimulationSpeed);
 
 protected:
@@ -58,7 +58,7 @@ public:
 	TArray<FVector> Path = {};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator ToRotation;
+		FRotator DesiredRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AActor> MarkerClass;
@@ -68,4 +68,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SimulationSpeedMultiplier = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelTank = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelExpense = 0.f;
 };

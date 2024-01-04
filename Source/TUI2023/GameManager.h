@@ -30,15 +30,15 @@ public:
 	void ParabolaPoint3D(float u, FVector Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2);
 
 
-	UFUNCTION(BlueprintPure, meta = (Step = 0.1))
-	bool ParabolaParabola2D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
+	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
+	bool ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
 
-	UFUNCTION(BlueprintPure, meta = (Step = 0.1))
-	bool ParabolaParabola3D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime);
+	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
+	bool ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime);
 
 	UFUNCTION(BlueprintPure)
 	void SetPredictionResults(FRotator DesiredRotation, float WaitTime, FProjectileParams& ProjectileParams);
-
+	
 	UFUNCTION(BlueprintCallable)
 	void ResetSimulation();
 
@@ -55,21 +55,21 @@ public:
 	float WorldSimulationSpeed = 1.f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
-	TArray <ATarget2D*> Targets2D = {};
+	TArray<ATarget2D*> Targets2D = {};
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
-	TArray <AProjectile2D*> Projectiles2D = {};
+	TArray<AProjectile2D*> Projectiles2D = {};
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
-	TArray <ATarget3D*> Targets3D = {};
+	TArray<ATarget3D*> Targets3D = {};
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
-	TArray <AProjectile3D*> Projectiles3D = {};
+	TArray<AProjectile3D*> Projectiles3D = {};
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects Specs")
-	TArray <FTargetParams> TargetsToLoad = {};
+	TArray<FTargetParams> TargetsToLoad = {};
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects Specs")
-	TArray <FProjectileParams> ProjectilesToLoad = {};
+	TArray<FProjectileParams> ProjectilesToLoad = {};
 };
 

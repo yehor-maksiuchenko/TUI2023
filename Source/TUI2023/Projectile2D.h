@@ -7,7 +7,6 @@
 #include "Components/SphereComponent.h"
 #include "Target2D.h"
 #include "TUI2023.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "Projectile2D.generated.h"
 
 UCLASS()
@@ -18,8 +17,8 @@ class TUI2023_API AProjectile2D : public AActor
 public:	
 	AProjectile2D();
 
-	UFUNCTION(BlueprintCallable, Category = "Custom Initialization", meta = (g = 9.8, SimulationSpeed = 1.0))
-		void InitializeProjectile2D(FProjectileParams ProjectileParams, ATarget2D* TargetRef, float g, float SimulationSpeed);
+	UFUNCTION(BlueprintCallable, Category = "Custom Initialization")
+	void InitializeProjectile2D(FProjectileParams ProjectileParams, ATarget2D* TargetRef, float g, float SimulationSpeed);
 
 protected:
 	virtual void BeginPlay() override;
@@ -33,6 +32,7 @@ public:
 
 	FVector BallisticMovement();
 	void AerodynamicalRotation(float DeltaTime);
+	void AerodynamicalRotation2D(float DeltaTime);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UStaticMeshComponent* Mesh;
@@ -78,4 +78,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SimulationSpeedMultiplier = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelTank;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelExpense;
 };

@@ -18,7 +18,7 @@ class TUI2023_API AProjectile3D : public AActor
 public:
 	AProjectile3D();
 
-	UFUNCTION(BlueprintCallable, Category = "Custom Initialization", meta = (g = 9.8, SimulationSpeed = 1.0))
+	UFUNCTION(BlueprintCallable, Category = "Custom Initialization")
 	void InitializeProjectile3D(FProjectileParams ProjectileParams, ATarget3D* TargetRef, float g, float SimulationSpeed);
 
 protected:
@@ -57,10 +57,10 @@ public:
 	float RotationSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RotationSpeedAlpha;
+	float RotationSpeedPitch;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RotationSpeedBeta;
+	float RotationSpeedYaw;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float WaitTime;
@@ -82,4 +82,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SimulationSpeedMultiplier = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelTank = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelExpense = 0.f;
 };

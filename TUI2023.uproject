@@ -22,5 +22,11 @@
 				"Win64"
 			]
 		}
+	],
+	"TargetPlatforms": [
+		"AllDesktop",
+		"LinuxNoEditor",
+		"MacNoEditor",
+		"WindowsNoEditor"
 	]
 }

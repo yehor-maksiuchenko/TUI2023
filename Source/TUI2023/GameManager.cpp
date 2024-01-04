@@ -79,7 +79,7 @@ void UGameManager::ParabolaPoint3D(float u, FVector Position, float& horizontal_
 	ParabolaPoint2D(u, TargetLocationD[0], TargetLocationD[1], vertical_angle1, vertical_angle2, time1, time2);
 }
 
-bool UGameManager::ParabolaParabola2D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition)
+bool UGameManager::ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition)
 {
 	// position => 0:-:1
 	float ProjectilePitch = ProjectileParams.StartRotation.Pitch;
@@ -143,7 +143,7 @@ bool UGameManager::ParabolaParabola2D(FProjectileParams& ProjectileParams, FTarg
 	return false;
 }
 
-bool UGameManager::ParabolaParabola3D(FProjectileParams& ProjectileParams, FTargetParams& TargetParams, float Step, float& CollisionTime)
+bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime)
 {
 	float ProjectileYaw = ProjectileParams.StartRotation.Yaw;
 	float ProjectilePitch = ProjectileParams.StartRotation.Pitch;

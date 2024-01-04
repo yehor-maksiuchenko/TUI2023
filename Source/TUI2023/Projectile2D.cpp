@@ -6,12 +6,12 @@ AProjectile2D::AProjectile2D()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
 	RootComponent = Mesh;
+	Mesh->SetWorldScale3D(FVector(1.f));
+	Mesh->SetRelativeRotation(FRotator(0.f));
+
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
-	Sphere->SetSphereRadius(100);
 	Sphere->SetRelativeLocation(FVector(0, 0, 0));
 	Sphere->SetupAttachment(RootComponent);
-
-	Mesh->SetWorldScale3D(FVector(1.f));
 }
 
 void AProjectile2D::InitializeProjectile2D(FProjectileParams ProjectileParams, ATarget2D* TargetRef, float g, float SimulationSpeed)
@@ -21,10 +21,15 @@ void AProjectile2D::InitializeProjectile2D(FProjectileParams ProjectileParams, A
 	StartRotation = ProjectileParams.StartRotation;
 	Velocity = ProjectileParams.Velocity;
 	RotationSpeed = ProjectileParams.RotationSpeed;
+	Mesh->SetStaticMesh(ProjectileParams.Mesh);
 	SimulationSpeedMultiplier = SimulationSpeed;
 	G = g;
+	Mesh->SetWorldScale3D(FVector(ProjectileParams.SizeK));
+	Sphere->SetSphereRadius(ProjectileParams.SizeK);
+	FuelTank = ProjectileParams.FuelTank;
+	FuelExpense = ProjectileParams.FuelExpense;
 	SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));
-	SetActorRotation(StartRotation);
+	SetActorRotation(FRotator(StartRotation.Pitch, 0.f, 0.f));
 	if (isBallistic)
 	{
 		WaitTime = ProjectileParams.WaitTime;
@@ -37,11 +42,6 @@ void AProjectile2D::InitializeProjectile2D(FProjectileParams ProjectileParams, A
 		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 	}
 	if (ProjectileParams.WaitTime > 0.f) bWait = true;
-
-	else
-	{
-		
-	}
 }
 
 void AProjectile2D::BeginPlay()
@@ -57,27 +57,31 @@ void AProjectile2D::BeginPlay()
 void AProjectile2D::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	DeltaTime *= SimulationSpeedMultiplier;
 
 	FVector old_pos = GetActorLocation();
 	if (isBallistic)
 	{
 		if (bWait)
 		{
-			if (GetActorRotation() != DesiredRotation)
-			{
-				AerodynamicalRotation(DeltaTime * SimulationSpeedMultiplier);
-			}
-			if (GetGameTimeSinceCreation() * SimulationSpeedMultiplier >= WaitTime * SimulationSpeedMultiplier) bWait = false;
+			AerodynamicalRotation2D(DeltaTime);
+			if (GetGameTimeSinceCreation() * SimulationSpeedMultiplier >= WaitTime) { bWait = false; StartRotation = DesiredRotation; }
 		}
-		SetActorLocation(BallisticMovement());
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
+		else
+		{
+			SetActorLocation(BallisticMovement());
+			SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
+		}
 	}
 	else
 	{
-		float dVelocity = Velocity * DeltaTime * SimulationSpeedMultiplier;
+		float dVelocity = (GetGameTimeSinceCreation() >= 1 ? Velocity * DeltaTime : Velocity * DeltaTime * GetGameTimeSinceCreation());
 		SetActorLocation(old_pos + GetActorForwardVector() * dVelocity);
+		FuelTank -= (GetGameTimeSinceCreation() >= 1 ? FuelExpense * DeltaTime : FuelExpense * DeltaTime * 2);
+		if (FuelTank <= 0) { isBallistic = true; StartLocation = GetActorLocation(); StartRotation = GetActorRotation(); }
 		if (FVector::Dist(GetActorLocation(), Path[0]) <= dVelocity)
 		{
+			SetActorLocation(Path[0]);
 			if (Path[0] != Path.Last())
 			{
 				SetActorLocation(Path[0]);
@@ -86,21 +90,21 @@ void AProjectile2D::Tick(float DeltaTime)
 			}
 			else
 			{
-				Destroy();
+				isBallistic = true; StartLocation = GetActorLocation(); StartRotation = GetActorRotation();
 			}
 		}
 		if (bRotate)
 		{
 			DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 		}
-		AerodynamicalRotation(DeltaTime * SimulationSpeedMultiplier);
+		AerodynamicalRotation(DeltaTime);
 
 	}
 }
 
 FVector AProjectile2D::BallisticMovement()
 {
-	float t = GetGameTimeSinceCreation() * SimulationSpeedMultiplier;
+	float t = (GetGameTimeSinceCreation() - WaitTime) * SimulationSpeedMultiplier;
 
 	float Pitch = StartRotation.Pitch * PI / 180.0f;
 	float Yaw = StartRotation.Yaw * PI / 180.0f;
@@ -119,11 +123,8 @@ FVector AProjectile2D::BallisticMovement()
 void AProjectile2D::AerodynamicalRotation(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
-
-
 	if (CurrentRotation != DesiredRotation)
 	{
-		
 		bRotate = true;
 		float DotProduct = FMath::Abs(DesiredRotation.Quaternion().GetNormalized() | CurrentRotation.Quaternion().GetNormalized());
 		float AngularDifference = FMath::RadiansToDegrees(2.0f * FMath::Acos(DotProduct));
@@ -132,4 +133,17 @@ void AProjectile2D::AerodynamicalRotation(float DeltaTime)
 		
 	}
 	else bRotate = false;
+}
+
+void AProjectile2D::AerodynamicalRotation2D(float DeltaTime)
+{
+	FRotator CurrentRotation = GetActorRotation();
+	if (CurrentRotation != DesiredRotation)
+	{
+		bRotate = true;
+		float AngularDifference = (FMath::Abs(DesiredRotation.Pitch - CurrentRotation.Pitch) > RotationSpeed * DeltaTime ? RotationSpeed * DeltaTime : DesiredRotation.Pitch - CurrentRotation.Pitch);
+		float NewPitch = AngularDifference;
+		SetActorRotation(FRotator(NewPitch, 0.f, 0.f));
+	}
+	bRotate = false;
 }

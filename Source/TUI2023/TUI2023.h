@@ -25,16 +25,16 @@ public:
 	float RotationSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	FRotator DesiredRotation;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
-	float WaitTime = 0.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	float LauncherRotationSpeedYaw;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	float LauncherRotationSpeedPitch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	FRotator DesiredRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
+	float WaitTime = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Initialize")
 	UStaticMesh* Mesh;
