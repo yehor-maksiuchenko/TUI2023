@@ -14,6 +14,17 @@ AProjectile3D::AProjectile3D()
 void AProjectile3D::InitializeProjectile3D(FProjectileParams ProjectileParams, ATarget3D* TargetRef, float g, float SimulationSpeed)
 {
 	isBallistic = ProjectileParams.isBallistic;
+	if (isBallistic)
+	{
+		WaitTime = ProjectileParams.WaitTime;
+		DesiredRotation = ProjectileParams.DesiredRotation;
+	}
+	else
+	{
+		Target = TargetRef;
+		Path.Add(Target->GetActorLocation());
+		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
+	}
 	StartLocation = ProjectileParams.StartLocation;
 	StartRotation = ProjectileParams.StartRotation;
 	Velocity = ProjectileParams.Velocity;
@@ -29,17 +40,6 @@ void AProjectile3D::InitializeProjectile3D(FProjectileParams ProjectileParams, A
 	Sphere->SetSphereRadius(ProjectileParams.SizeK);
 	FuelTank = ProjectileParams.FuelTank;
 	FuelExpense = ProjectileParams.FuelExpense;
-	if (isBallistic)
-	{
-		WaitTime = ProjectileParams.WaitTime;
-		DesiredRotation = ProjectileParams.DesiredRotation;
-	}
-	else
-	{
-		Target = TargetRef;
-		Path.Add(Target->GetActorLocation());
-		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
-	}
 	if (ProjectileParams.WaitTime > 0.f) bWait = true;
 }
 
@@ -59,17 +59,21 @@ void AProjectile3D::Tick(float DeltaTime)
 	DeltaTime *= SimulationSpeedMultiplier;
 
 	FVector old_pos = GetActorLocation();
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, old_pos.ToString());
+	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, old_pos.ToString());
 	if (isBallistic)
 	{
 		if (bWait)
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(DeltaTime));
+
 			RotationWhileWaiting(DeltaTime);
-			if (GetGameTimeSinceCreation() >= WaitTime) { bWait = false; StartRotation = GetActorRotation(); }
+			if (GetGameTimeSinceCreation() >= WaitTime) { bWait = false; StartLocation = GetActorLocation(); StartRotation = GetActorRotation(); }
 		}
-		SetActorLocation(BallisticMovement());
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, GetActorRotation().ToString());
+		else
+		{
+			SetActorLocation(BallisticMovement());
+			SetActorRotation(UKismetMathLibrary::FindLookAtRotation(old_pos, GetActorLocation()));
+		}
 	}
 	else
 	{
@@ -137,16 +141,29 @@ void AProjectile3D::RotationWhileWaiting(float DeltaTime)
 	FRotator CurrentRotation = GetActorRotation();
 	if (CurrentRotation.Pitch != DesiredRotation.Pitch)
 	{
-		float AngularDifference = (FMath::Abs(DesiredRotation.Pitch - CurrentRotation.Pitch) > RotationSpeedPitch * DeltaTime ? RotationSpeedPitch * DeltaTime : DesiredRotation.Pitch - CurrentRotation.Pitch);
-		float NewPitch = (DesiredRotation.Pitch > CurrentRotation.Pitch ? AngularDifference : -AngularDifference);
-		CurrentRotation.Pitch += NewPitch;
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(CurrentRotation.Pitch));
+		if (FMath::Abs(DesiredRotation.Pitch - CurrentRotation.Pitch) > RotationSpeedPitch * DeltaTime)
+		{
+			float NewPitch;
+			if (DesiredRotation.Pitch > CurrentRotation.Pitch)
+			{
+				NewPitch = CurrentRotation.Pitch + (RotationSpeedPitch * DeltaTime);
+			}
+			else
+			{
+				NewPitch = CurrentRotation.Pitch - (RotationSpeedPitch * DeltaTime);
+			}
+			SetActorRotation(FRotator(NewPitch, CurrentRotation.Yaw, CurrentRotation.Roll));
+		}
+		else SetActorRotation(FRotator(DesiredRotation.Pitch, CurrentRotation.Yaw, CurrentRotation.Roll));
 	}
+	CurrentRotation = GetActorRotation();
 	if (CurrentRotation.Yaw != DesiredRotation.Yaw)
 	{
-		float AngularDifference = (FMath::Abs(DesiredRotation.Yaw - CurrentRotation.Yaw) > RotationSpeedYaw * DeltaTime ? RotationSpeedYaw * DeltaTime : DesiredRotation.Yaw - CurrentRotation.Yaw);
-		float NewYaw = (DesiredRotation.Yaw > CurrentRotation.Yaw ? AngularDifference : -AngularDifference);
-		CurrentRotation.Yaw += NewYaw;
+		if (FMath::Abs(DesiredRotation.Yaw - CurrentRotation.Yaw) > RotationSpeedYaw * DeltaTime)
+		{
+			float NewYaw = (DesiredRotation.Yaw > CurrentRotation.Yaw ? CurrentRotation.Yaw + RotationSpeedYaw * DeltaTime : CurrentRotation.Yaw - RotationSpeedYaw * DeltaTime);
+			SetActorRotation(FRotator(CurrentRotation.Pitch, NewYaw, CurrentRotation.Roll));
+		}
+		else SetActorRotation(FRotator(CurrentRotation.Pitch, DesiredRotation.Yaw, CurrentRotation.Roll));
 	}
-	SetActorRotation(CurrentRotation);
 }

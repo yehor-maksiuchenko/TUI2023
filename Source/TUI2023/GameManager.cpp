@@ -151,7 +151,7 @@ bool UGameManager::ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Para
 	return false;
 }
 
-bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime)
+bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition)
 {
 	float ProjectileYaw = ProjectileParams.StartRotation.Yaw;
 	float ProjectilePitch = ProjectileParams.StartRotation.Pitch;
@@ -190,6 +190,7 @@ bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Para
 			if (RotationTime <= ProjectileParams.WaitTime) {
 				ProjectileParams.DesiredRotation = FRotator(vertical_angle1, horizontal_angle, 0);
 				CollisionTime = t;
+				CollisionPosition = CurrentPosition;
 				break;
 			}
 
@@ -205,6 +206,7 @@ bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Para
 			if (RotationTime <= ProjectileParams.WaitTime) {
 				ProjectileParams.DesiredRotation = FRotator(TargetPitch1, horizontal_angle, 0);
 				CollisionTime = t;
+				CollisionPosition = CurrentPosition;
 				break;
 			}
 		}
