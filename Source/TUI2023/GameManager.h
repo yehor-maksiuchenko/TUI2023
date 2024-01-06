@@ -32,10 +32,10 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
-	bool ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
+	bool ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition, float& WaitTime);
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
-	bool ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
+	bool ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition, float& WaitTime);
 
 	UFUNCTION(BlueprintPure)
 	void SetPredictionResults(FRotator DesiredRotation, float WaitTime, FProjectileParams& ProjectileParams);

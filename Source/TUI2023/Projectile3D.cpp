@@ -11,15 +11,16 @@ AProjectile3D::AProjectile3D()
 	Sphere->SetupAttachment(RootComponent);
 }
 
+void AProjectile3D::SetPredictionResults(FRotator Rotation, float Time)
+{
+	DesiredRotation = Rotation;
+	WaitTime = Time;
+}
+
 void AProjectile3D::InitializeProjectile3D(FProjectileParams ProjectileParams, ATarget3D* TargetRef, float g, float SimulationSpeed)
 {
 	isBallistic = ProjectileParams.isBallistic;
-	if (isBallistic)
-	{
-		WaitTime = ProjectileParams.WaitTime;
-		DesiredRotation = ProjectileParams.DesiredRotation;
-	}
-	else
+	if (!isBallistic)
 	{
 		Target = TargetRef;
 		Path.Add(Target->GetActorLocation());
