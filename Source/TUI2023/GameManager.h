@@ -32,10 +32,10 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
-	bool ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition, float& WaitTime);
+	bool ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
-	bool ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition, float& WaitTime);
+	bool ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
 
 	UFUNCTION(BlueprintPure)
 	void SetPredictionResults(FRotator DesiredRotation, float WaitTime, FProjectileParams& ProjectileParams);
@@ -54,6 +54,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "World Settings")
 	float WorldSimulationSpeed = 1.f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
+	TArray<AActor*> Launchers = {};
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
 	TArray<ATarget2D*> Targets2D = {};

@@ -13,21 +13,24 @@ AProjectile3D::AProjectile3D()
 
 void AProjectile3D::SetPredictionResults(FRotator Rotation, float Time)
 {
-	DesiredRotation = Rotation;
-	WaitTime = Time;
+	
 }
 
 void AProjectile3D::InitializeProjectile3D(FProjectileParams ProjectileParams, ATarget3D* TargetRef, float g, float SimulationSpeed)
 {
 	isBallistic = ProjectileParams.isBallistic;
-	if (!isBallistic)
+	if (isBallistic)
+	{
+		DesiredRotation = ProjectileParams.DesiredRotation;
+		WaitTime = ProjectileParams.WaitTime;
+	}
 	{
 		Target = TargetRef;
 		Path.Add(Target->GetActorLocation());
 		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 	}
-	StartLocation = ProjectileParams.StartLocation;
-	StartRotation = ProjectileParams.StartRotation;
+	/*StartLocation = ProjectileParams.StartLocation;
+	StartRotation = ProjectileParams.StartRotation;*/
 	Velocity = ProjectileParams.Velocity;
 	RotationSpeed = ProjectileParams.RotationSpeed;
 	RotationSpeedPitch = ProjectileParams.LauncherRotationSpeedPitch;
