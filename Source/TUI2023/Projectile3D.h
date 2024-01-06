@@ -31,6 +31,7 @@ public:
 
 	FVector BallisticMovement();
 	void AerodynamicalRotation(float DeltaTime);
+	void RotationWhileWaiting(float DeltaTime);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UStaticMeshComponent* Mesh;

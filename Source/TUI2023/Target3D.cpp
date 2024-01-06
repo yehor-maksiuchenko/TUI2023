@@ -21,9 +21,9 @@ void ATarget3D::InitializeTarget3D(FTargetParams TargetParams, float g, float Si
 	StartRotation = TargetParams.StartRotation;
 	Velocity = TargetParams.Velocity;
 	RotationSpeed = TargetParams.RotationSpeed;
+	Mesh->SetStaticMesh(TargetParams.Mesh);
 	SimulationSpeedMultiplier = SimulationSpeed;
 	G = g;
-	Mesh->SetStaticMesh(TargetParams.Mesh);
 	Mesh->SetWorldScale3D(FVector(TargetParams.SizeK));
 	Sphere->SetSphereRadius(TargetParams.SizeK);
 	SetActorLocation(StartLocation);

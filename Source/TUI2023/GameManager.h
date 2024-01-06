@@ -26,8 +26,9 @@ public:
 
 	float FlightTime(float u, float angle, float y);
 	float MaxHeight(float u);
-	void ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2);
-	void ParabolaPoint3D(float u, FVector Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2);
+	float GetAngleOnThePlane(float x, float y);
+	void ParabolaPoint2D(float u, FVector2D& Position, float& angle1, float& angle2, float& time1, float& time2);
+	void ParabolaPoint3D(float u, FVector& Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2);
 
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))

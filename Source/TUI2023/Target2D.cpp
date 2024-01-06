@@ -18,6 +18,7 @@ void ATarget2D::InitializeTarget2D(FTargetParams TargetParams, float g, float Si
 	StartRotation = TargetParams.StartRotation;
 	Velocity = TargetParams.Velocity;
 	RotationSpeed = TargetParams.RotationSpeed;
+	Mesh->SetStaticMesh(TargetParams.Mesh);
 	SimulationSpeedMultiplier = SimulationSpeed;
 	G = g;
 	SetActorLocation(FVector(StartLocation.X, 0.f, StartLocation.Z));

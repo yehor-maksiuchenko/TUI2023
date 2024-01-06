@@ -64,8 +64,8 @@ void AProjectile2D::Tick(float DeltaTime)
 	{
 		if (bWait)
 		{
-			AerodynamicalRotation2D(DeltaTime);
-			if (GetGameTimeSinceCreation() * SimulationSpeedMultiplier >= WaitTime) { bWait = false; StartRotation = DesiredRotation; }
+			RotationWhileWaiting(DeltaTime);
+			if (GetGameTimeSinceCreation() * SimulationSpeedMultiplier >= WaitTime) { bWait = false; StartRotation = GetActorRotation(); }
 		}
 		else
 		{
@@ -135,15 +135,15 @@ void AProjectile2D::AerodynamicalRotation(float DeltaTime)
 	else bRotate = false;
 }
 
-void AProjectile2D::AerodynamicalRotation2D(float DeltaTime)
+void AProjectile2D::RotationWhileWaiting(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
-	if (CurrentRotation != DesiredRotation)
+	if (CurrentRotation.Pitch != DesiredRotation.Pitch)
 	{
 		bRotate = true;
 		float AngularDifference = (FMath::Abs(DesiredRotation.Pitch - CurrentRotation.Pitch) > RotationSpeed * DeltaTime ? RotationSpeed * DeltaTime : DesiredRotation.Pitch - CurrentRotation.Pitch);
-		float NewPitch = AngularDifference;
-		SetActorRotation(FRotator(NewPitch, 0.f, 0.f));
+		float NewPitch = (DesiredRotation.Pitch > CurrentRotation.Pitch ? AngularDifference : -AngularDifference);
+		SetActorRotation(FRotator(CurrentRotation.Pitch + NewPitch, 0.f, 0.f));
 	}
-	bRotate = false;
+	else bRotate = false;
 }

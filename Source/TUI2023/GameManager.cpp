@@ -20,39 +20,46 @@ float UGameManager::MaxHeight(float u)
 	return (u * t - 0.5f * G * t * t);
 }
 
-void UGameManager::ParabolaPoint2D(float u, float x, float y, float& angle1, float& angle2, float& time1, float& time2)
+float UGameManager::GetAngleOnThePlane(float x, float y)
 {
+	if (x == 0) {
+		if (y < 0) return 270;
+		if (y > 0) return 90;
+	}
+	float abs_x = abs(x);
+	float result = FMath::Atan(y / abs_x) * 180 / PI;
+	if (x < 0) result = 180 - result;
+	return result;
+}
+
+void UGameManager::ParabolaPoint2D(float u, FVector2D& Position, float& angle1, float& angle2, float& time1, float& time2)
+{
+	float x = Position.X;
+	float y = Position.Y;
 	float x_0 = x;
-	x = FMath::Abs(x);
+	x = abs(x);
 	float a = -G * 0.5 * FMath::Square(x / u);
 	float b = x;
 	float c = a - y;
-	float D = FMath::Square(b) - 4 * a * c;
+	float D = pow(b, 2) - 4 * a * c;
 
 	if (D > 0) {
 		float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
 		float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
-
 		angle1 = FMath::Atan(t1) * 180 / PI;
 		angle2 = FMath::Atan(t2) * 180 / PI;
-
 		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
 		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
-
 	}
 	else if (D == 0) {
-
 		float t1 = (-1 * b + FMath::Sqrt(D)) / (2 * a);
 		float t2 = (-1 * b - FMath::Sqrt(D)) / (2 * a);
-
 		angle1 = FMath::Atan(t1) * 180 / PI;
 		angle2 = FMath::Atan(t2) * 180 / PI;
-
 		time1 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle1)));
 		time2 = x / (u * FMath::Cos(FMath::DegreesToRadians(angle2)));
 	}
 	else {
-
 		angle1 = -90;
 		angle2 = -90;
 		time1 = -1;
@@ -64,19 +71,19 @@ void UGameManager::ParabolaPoint2D(float u, float x, float y, float& angle1, flo
 	}
 }
 
-void UGameManager::ParabolaPoint3D(float u, FVector Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2)
+void UGameManager::ParabolaPoint3D(float u, FVector& Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2)
 {
 	float x = Position.X;
 	float y = Position.Y;
 	float z = Position.Z;
 
-	TArray <float> TargetLocationD(0, 0);
+	FVector2D Position2D;
 
-	TargetLocationD[0] = FMath::Sqrt(FMath::Square(x) + FMath::Square(y));
-	TargetLocationD[1] = z;
-	horizontal_angle = FMath::Acos((x / TargetLocationD[0])) * 180 / PI;
+	Position2D.X = FMath::Sqrt(FMath::Square(x) + FMath::Square(y));
+	Position2D.Y = z;
+	horizontal_angle = GetAngleOnThePlane(x, y);
 
-	ParabolaPoint2D(u, TargetLocationD[0], TargetLocationD[1], vertical_angle1, vertical_angle2, time1, time2);
+	ParabolaPoint2D(u, Position2D, vertical_angle1, vertical_angle2, time1, time2);
 }
 
 bool UGameManager::ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition)
@@ -107,7 +114,8 @@ bool UGameManager::ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Para
 		if (y > MaxH) continue;
 
 		float angle1, TargetPitch1, time1, time2;
-		ParabolaPoint2D(ProjectileParams.Velocity, x, y, angle1, TargetPitch1, time1, time2);
+		FVector2D T{ x, y };
+		ParabolaPoint2D(ProjectileParams.Velocity, T, angle1, TargetPitch1, time1, time2);
 		if (time1 <= t && angle1 != -90)
 		{
 			float Rotation = abs(ProjectilePitch - angle1);
