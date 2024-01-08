@@ -108,6 +108,36 @@ FVector ATarget3D::BallisticMovement()
 void ATarget3D::AerodynamicalRotation(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
+	float RotationSpeedPitch = RotationSpeed * (abs(DesiredRotation.Pitch) - abs(CurrentRotation.Pitch)) / ((abs(DesiredRotation.Pitch) - abs(CurrentRotation.Pitch)) + (abs(DesiredRotation.Yaw) - abs(CurrentRotation.Yaw)));
+	float RotationSpeedYaw = RotationSpeed - RotationSpeedPitch;
+	if (CurrentRotation.Pitch != DesiredRotation.Pitch)
+	{
+		if (FMath::Abs(DesiredRotation.Pitch - CurrentRotation.Pitch) > RotationSpeedPitch * DeltaTime)
+		{
+			float NewPitch;
+			if (DesiredRotation.Pitch > CurrentRotation.Pitch)
+			{
+				NewPitch = CurrentRotation.Pitch + (RotationSpeedPitch * DeltaTime);
+			}
+			else
+			{
+				NewPitch = CurrentRotation.Pitch - (RotationSpeedPitch * DeltaTime);
+			}
+			SetActorRotation(FRotator(NewPitch, CurrentRotation.Yaw, CurrentRotation.Roll));
+		}
+		else SetActorRotation(FRotator(DesiredRotation.Pitch, CurrentRotation.Yaw, CurrentRotation.Roll));
+	}
+	CurrentRotation = GetActorRotation();
+	if (CurrentRotation.Yaw != DesiredRotation.Yaw)
+	{
+		if (FMath::Abs(DesiredRotation.Yaw - CurrentRotation.Yaw) > RotationSpeedYaw * DeltaTime)
+		{
+			float NewYaw = (DesiredRotation.Yaw > CurrentRotation.Yaw ? CurrentRotation.Yaw + RotationSpeedYaw * DeltaTime : CurrentRotation.Yaw - RotationSpeedYaw * DeltaTime);
+			SetActorRotation(FRotator(CurrentRotation.Pitch, NewYaw, CurrentRotation.Roll));
+		}
+		else SetActorRotation(FRotator(CurrentRotation.Pitch, DesiredRotation.Yaw, CurrentRotation.Roll));
+	}
+	/*FRotator CurrentRotation = GetActorRotation();
 	if (CurrentRotation != DesiredRotation)
 	{
 		bRotate = true;
@@ -116,6 +146,40 @@ void ATarget3D::AerodynamicalRotation(float DeltaTime)
 		FQuat ResultRotation = FQuat::Slerp(CurrentRotation.Quaternion(), DesiredRotation.Quaternion(), FMath::Clamp((DeltaTime * RotationSpeed) / AngularDifference, 0.0f, 1.0f));
 		SetActorRotation(ResultRotation);
 	}
-	else bRotate = false;
+	else bRotate = false;*/
+}
+
+void ATarget3D::ObstacleAvoidance(float DeltaTime)
+{
+	FRotator CurrentRotation = GetActorRotation();
+	float RotationSpeedPitch = RotationSpeed * (abs(DesiredRotation.Pitch) - abs(CurrentRotation.Pitch)) / ((abs(DesiredRotation.Pitch) - abs(CurrentRotation.Pitch)) + (abs(DesiredRotation.Yaw) - abs(CurrentRotation.Yaw)));
+	float RotationSpeedYaw = RotationSpeed - RotationSpeedPitch;
+	if (CurrentRotation.Pitch != DesiredRotation.Pitch)
+	{
+		if (FMath::Abs(DesiredRotation.Pitch - CurrentRotation.Pitch) > RotationSpeedPitch * DeltaTime)
+		{
+			float NewPitch;
+			if (DesiredRotation.Pitch > CurrentRotation.Pitch)
+			{
+				NewPitch = CurrentRotation.Pitch + (RotationSpeedPitch * DeltaTime);
+			}
+			else
+			{
+				NewPitch = CurrentRotation.Pitch - (RotationSpeedPitch * DeltaTime);
+			}
+			SetActorRotation(FRotator(NewPitch, CurrentRotation.Yaw, CurrentRotation.Roll));
+		}
+		else SetActorRotation(FRotator(DesiredRotation.Pitch, CurrentRotation.Yaw, CurrentRotation.Roll));
+	}
+	CurrentRotation = GetActorRotation();
+	if (CurrentRotation.Yaw != DesiredRotation.Yaw)
+	{
+		if (FMath::Abs(DesiredRotation.Yaw - CurrentRotation.Yaw) > RotationSpeedYaw * DeltaTime)
+		{
+			float NewYaw = (DesiredRotation.Yaw > CurrentRotation.Yaw ? CurrentRotation.Yaw + RotationSpeedYaw * DeltaTime : CurrentRotation.Yaw - RotationSpeedYaw * DeltaTime);
+			SetActorRotation(FRotator(CurrentRotation.Pitch, NewYaw, CurrentRotation.Roll));
+		}
+		else SetActorRotation(FRotator(CurrentRotation.Pitch, DesiredRotation.Yaw, CurrentRotation.Roll));
+	}
 }
 

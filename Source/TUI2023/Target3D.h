@@ -33,6 +33,7 @@ public:
 
 	FVector BallisticMovement();
 	void AerodynamicalRotation(float DeltaTime);
+	void ObstacleAvoidance(float DeltaTime);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		class UStaticMeshComponent* Mesh;
