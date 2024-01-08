@@ -56,6 +56,9 @@ public:
 	float WorldSimulationSpeed = 1.f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
+	TArray<AActor*> Launchers = {};
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")
 	TArray<ATarget2D*> Targets2D = {};
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects")

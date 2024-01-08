@@ -19,6 +19,9 @@ public:
 	AProjectile3D();
 
 	UFUNCTION(BlueprintCallable, Category = "Custom Initialization")
+	void SetPredictionResults(FRotator Rotation, float Time = 0.f);
+
+	UFUNCTION(BlueprintCallable, Category = "Custom Initialization")
 	void InitializeProjectile3D(FProjectileParams ProjectileParams, ATarget3D* TargetRef, float g, float SimulationSpeed);
 
 protected:

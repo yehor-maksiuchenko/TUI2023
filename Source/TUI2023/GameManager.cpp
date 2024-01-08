@@ -245,6 +245,11 @@ void UGameManager::ResetSimulation()
 		for (int i = 0; i < Projectiles3D.Num(); i++) Projectiles3D[i]->Destroy();
 		Projectiles3D.Empty();
 	}
+	if (Launchers.Num() > 0)
+	{
+		for (int i = 0; i < Launchers.Num(); i++) Launchers[i]->Destroy();
+		Launchers.Empty();
+	}
 }
 
 void UGameManager::LoadSimulation2D()
