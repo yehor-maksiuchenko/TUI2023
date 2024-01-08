@@ -24,6 +24,7 @@ void AProjectile3D::InitializeProjectile3D(FProjectileParams ProjectileParams, A
 		DesiredRotation = ProjectileParams.DesiredRotation;
 		WaitTime = ProjectileParams.WaitTime;
 	}
+	else
 	{
 		Target = TargetRef;
 		Path.Add(Target->GetActorLocation());

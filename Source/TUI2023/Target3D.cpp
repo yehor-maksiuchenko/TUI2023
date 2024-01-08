@@ -28,7 +28,6 @@ void ATarget3D::InitializeTarget3D(FTargetParams TargetParams, float g, float Si
 	Mesh->SetStaticMesh(TargetParams.Mesh);
 	SizeK = TargetParams.SizeK;
 	Sphere->SetSphereRadius(90 / RotationSpeed * Velocity / TargetParams.SizeK + 10);
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(Sphere->GetScaledSphereRadius()));
 	SimulationSpeedMultiplier = SimulationSpeed;
 	G = g;
 	Mesh->SetWorldScale3D(FVector(TargetParams.SizeK));
@@ -85,10 +84,21 @@ void ATarget3D::Tick(float DeltaTime)
 			}
 		}
 
+		if (CollidingObjects >= 1)
+		{
+			FHitResult Hit;
+			FCollisionQueryParams TraceParams;
+			TraceParams.AddIgnoredActor(this);
+			if (GetWorld()->LineTraceSingleByChannel(Hit, GetActorLocation(), GetActorLocation() + GetActorForwardVector() * Sphere->GetScaledSphereRadius(), ECollisionChannel::ECC_GameTraceChannel1, TraceParams))
+			{
+				DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + GetActorForwardVector() * Sphere->GetScaledSphereRadius(), Hit.bBlockingHit ? FColor::Orange : FColor::Blue, false, Hit.bBlockingHit ? 4.f : 0.f, 0, 10.0f);
+				ObstacleAvoidance(DeltaTime);
+			} else DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + GetActorForwardVector() * Sphere->GetScaledSphereRadius(), Hit.bBlockingHit ? FColor::Orange : FColor::Blue, false, Hit.bBlockingHit ? 4.f : 0.f, 0, 10.0f);
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, Hit.bBlockingHit ? TEXT("collision") : TEXT(""));
+		}
 		DesiredRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Path[0]);
 		AerodynamicalRotation(DeltaTime);
 		//if (bShouldManeuver) ObstacleAvoidance(DeltaTime); else AerodynamicalRotation(DeltaTime);
-		
 	}
 }
 
@@ -174,44 +184,62 @@ void ATarget3D::AerodynamicalRotation(float DeltaTime)
 void ATarget3D::ObstacleAvoidance(float DeltaTime)
 {
 	FRotator CurrentRotation = GetActorRotation();
-	float PitchDifference = DesiredRotation.Pitch - CurrentRotation.Pitch;
-	float YawDifference = DesiredRotation.Yaw - CurrentRotation.Yaw;
+	float PitchDifference = DesiredRotation.Pitch - CurrentRotation.Pitch; // y
+	float YawDifference = DesiredRotation.Yaw - CurrentRotation.Yaw; // x
+	float ArcBaseAngle = 180 - 2 * FMath::Atan(PitchDifference / FMath::Abs(YawDifference));
 	TArray<FHitResult> LastHits;
-	LastHits.AddUninitialized((180 / AvoidanceAngleStep) - 1);
+	LastHits.AddUninitialized(RaysInArc);
 	TArray<FVector> GoodGuesses;
 	UWorld* World = GetWorld();
 	float Radius = FMath::Sqrt(PitchDifference * PitchDifference + YawDifference * YawDifference);
-	float BaseAngle = FMath::Atan2(DesiredRotation.Pitch, DesiredRotation.Yaw);
-	float ArcBaseAngle = FMath::Atan2(DesiredRotation.Pitch - (CurrentRotation.Pitch + Radius), DesiredRotation.Yaw);
+	float StartAngle = FMath::Atan2(DesiredRotation.Pitch, DesiredRotation.Yaw);
+	//float ArcBaseAngle = FMath::RadiansToDegrees(FMath::Atan2(DesiredRotation.Pitch - (CurrentRotation.Pitch + Radius), DesiredRotation.Yaw));
+	// FMath::RadiansToDegrees(acosf(FVector2D::DotProduct(FVector2D(YawDifference, PitchDifference), FVector2D(0, PitchDifference)))) * 2
 	//float ArcLength = 2 * PI * FMath::Sqrt(PitchDifference * PitchDifference + YawDifference * YawDifference) * (ArcBaseAngle / 360);
-	
-	/*FRotator NewRotation = CurrentRotation
-	World->LineTraceSingleByChannel(LastHits[i], TraceStart, );*/
 
 	const FCollisionQueryParams Response = FCollisionQueryParams();
-	//Response.
-
-	while (true)
+	FVector TraceStart = GetActorLocation();
+	for (float i = BetweenArcStep; i < 90; i += BetweenArcStep)
 	{
-		FVector TraceStart = GetActorLocation();
-		for (int i = AvoidanceDensityStep; i < 90; i+= AvoidanceDensityStep)
+		for (float j = ArcBaseAngle / RaysInArc; j <= ArcBaseAngle; j += ArcBaseAngle / RaysInArc)
 		{
-			for (int j = AvoidanceAngleStep; j < ArcBaseAngle * 2; j += AvoidanceAngleStep)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Angle = ") + FString::SanitizeFloat(FMath::RadiansToDegrees(acosf(FVector2D::DotProduct(FVector2D(YawDifference, PitchDifference), FVector2D(0, PitchDifference)))) * 2));
+			float NewPitch = (Radius * (i / BetweenArcStep)) * FMath::Sin(j + StartAngle);
+			// Pitch - Vertical angle
+			float NewYaw = (Radius * (i / BetweenArcStep)) * FMath::Cos(j + StartAngle);
+			// Yaw - Horizontal angle
+			UE_LOG(LogTemp, Warning, TEXT("Arc: %f; PointOnArc: %f"), i, j);
+			FVector TraceEnd = TraceStart + (FRotator(NewPitch, NewYaw, CurrentRotation.Roll).Vector() * Velocity * 5);
+			FCollisionQueryParams TraceParams;
+			TraceParams.AddIgnoredActor(this);
+			if (!World->LineTraceSingleByChannel(LastHits[(j / RaysInArc) - 1], TraceStart, TraceEnd, ECollisionChannel::ECC_GameTraceChannel1, TraceParams))
 			{
-				float NewPitch = i * FMath::Cos(j + FMath::DegreesToRadians(BaseAngle));
-				float NewYaw = i * FMath::Sin(j + FMath::DegreesToRadians(BaseAngle));
-				FVector TraceEnd = TraceStart + (FRotator(NewPitch, NewYaw, CurrentRotation.Roll).Vector() * Velocity * 5);
-				if (!World->LineTraceSingleByChannel(LastHits[i], TraceStart, TraceEnd, ECollisionChannel::ECC_OverlapAll_Deprecated))
+				DrawDebugLine(GetWorld(), TraceStart, TraceEnd, LastHits[(j / RaysInArc) - 1].bBlockingHit ? FColor::Red : FColor::Green, false, 2.0f, 0, 10.0f);
+				for (int p = 0; p < 3; p++)
 				{
-					if (!World->LineTraceSingleByChannel(LastHits[i], TraceEnd, Path[0], ECollisionChannel::ECC_OverlapAll_Deprecated)) {
-						//Path.Insert(TraceEnd + (TraceEnd - Path[0]).GetUnsafeNormal() * Velocity * SizeK, 0);
+					if (!World->LineTraceSingleByChannel(LastHits[(j / RaysInArc) - 1], TraceEnd, Path[0], ECollisionChannel::ECC_GameTraceChannel1, TraceParams)) {
+						DrawDebugLine(GetWorld(), TraceStart, TraceEnd, LastHits[(j / RaysInArc) - 1].bBlockingHit ? FColor::Red : FColor::Green, false, 2.0f, 0, 10.0f);
 						TraceEnd = TraceEnd + (TraceEnd - Path[0]).GetUnsafeNormal() * Velocity * SizeK;
 						GoodGuesses.Add(TraceEnd);
+						break;
 					}
-
+					else
+					{
+						TraceEnd += (TraceStart - TraceEnd).GetUnsafeNormal() * Velocity * SizeK;
+					}
 				}
 			}
 		}
 	}
+	/*FVector BestOption = GoodGuesses[0];
+	for (int i = 0; i < GoodGuesses.Num(); i++)
+	{
+		if ((FVector::Distance(TraceStart, GoodGuesses[i]) + FVector::Distance(GoodGuesses[i], Path[0])) < (FVector::Distance(TraceStart, BestOption) + FVector::Distance(BestOption, Path[0])))
+		{
+			BestOption = GoodGuesses[i];
+		}
+	}
+	Path.Insert(BestOption, 0);
+	GetWorld()->SpawnActor<AActor>(MarkerClass, BestOption, FRotator());*/
 }
 
