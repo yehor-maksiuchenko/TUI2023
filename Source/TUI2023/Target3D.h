@@ -30,16 +30,31 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	bool bRotate = false;
+	int CollidingObjects = 0;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UStaticMeshComponent* Mesh;
+
+	UFUNCTION()
+	void OnProjectileBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class USphereComponent* Sphere;
+
+	UFUNCTION()
+	void OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
 	FVector BallisticMovement();
+
+	UFUNCTION()
 	void AerodynamicalRotation(float DeltaTime);
+
+	UFUNCTION()
 	void ObstacleAvoidance(float DeltaTime);
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-		class UStaticMeshComponent* Mesh;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-		class USphereComponent* Sphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool isBallistic;
@@ -63,7 +78,7 @@ public:
 	TSubclassOf<AActor> MarkerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FRotator DesiredRotation;
+	FRotator DesiredRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float G = 9.8f;
@@ -76,4 +91,16 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FuelExpense = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bShouldManeuver = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AvoidanceAngleStep = 10.0f; // degrees
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AvoidanceDensityStep = 5.f; // degrees
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SizeK = 1.f;
 };
