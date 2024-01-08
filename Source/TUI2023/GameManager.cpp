@@ -165,6 +165,7 @@ bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Para
 	float u_y2 = TargetParams.Velocity * FMath::Cos(FMath::DegreesToRadians(90 - TargetYaw)) * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
 	float u_z2 = TargetParams.Velocity * FMath::Sin(FMath::DegreesToRadians(TargetPitch));
 	float Time = FlightTime(TargetParams.Velocity, TargetPitch, TargetParams.StartLocation[2]);
+	//float Time = UGameplayStatics::Pre
 	float MaxH = MaxHeight(ProjectileParams.Velocity);
 	float result_vertical_angle = -90;
 	CollisionTime = -1;

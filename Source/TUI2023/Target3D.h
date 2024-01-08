@@ -8,6 +8,7 @@
 #include "Math/Quat.h"
 #include "Math/Vector.h"
 #include "Components/SphereComponent.h"
+#include "DrawDebugHelpers.h"
 #include "TUI2023.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Target3D.generated.h"
@@ -96,10 +97,10 @@ public:
 	bool bShouldManeuver = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AvoidanceAngleStep = 10.0f; // degrees
+	int RaysInArc = 10; // Rays to cast in Arc
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AvoidanceDensityStep = 5.f; // degrees
+	float BetweenArcStep = 10.f; // Offset between two Arcs, set in degrees
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SizeK = 1.f;

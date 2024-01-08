@@ -7,6 +7,7 @@
 #include "Target3D.h"
 #include "Projectile2D.h"
 #include "Projectile3D.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameManager.generated.h"
 
 
