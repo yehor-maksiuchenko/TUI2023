@@ -100,7 +100,7 @@ public:
 	int RaysInArc = 10; // Rays to cast in Arc
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float BetweenArcStep = 10.f; // Offset between two Arcs, set in degrees
+	int Arcs = 10; // Amount of arcs per one call
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SizeK = 1.f;

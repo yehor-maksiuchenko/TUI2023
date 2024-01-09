@@ -25,15 +25,32 @@ protected:
 public:
 	//virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
 	float FlightTime(float u, float angle, float y);
+
+	UFUNCTION()
 	float MaxHeight(float u);
+
+	UFUNCTION()
 	float GetAngleOnThePlane(float x, float y);
+
+	UFUNCTION()
 	void ParabolaPoint2D(float u, FVector2D& Position, float& angle1, float& angle2, float& time1, float& time2);
+
+	UFUNCTION()
 	void ParabolaPoint3D(float u, FVector& Position, float& horizontal_angle, float& vertical_angle1, float& vertical_angle2, float& time1, float& time2);
 
+	UFUNCTION()
+	void LinePoint2D(float u, FVector2D Position, float& result_angle, float& time);
+
+	UFUNCTION()
+	void LinePoint3D(float v, float a, FVector Position, float& horizontal_angle, float& vertical_angle, float& time);
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
 	bool ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
+
+	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
+	bool LineParabola2D(FProjectileParams Projectile, FTargetParams Target, float Step, float& CollisionTime, FVector& CollisionPosition);
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
 	bool ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);

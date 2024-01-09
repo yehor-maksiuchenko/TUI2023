@@ -86,6 +86,25 @@ void UGameManager::ParabolaPoint3D(float u, FVector& Position, float& horizontal
 	ParabolaPoint2D(u, Position2D, vertical_angle1, vertical_angle2, time1, time2);
 }
 
+void UGameManager::LinePoint2D(float u, FVector2D Position, float& result_angle, float& time)
+{
+	result_angle = GetAngleOnThePlane(Position[0], Position[1]);
+	float S = FMath::Sqrt(Position[0] * Position[0] + Position[1] * Position[1]);
+	time = S / u;
+}
+
+void UGameManager::LinePoint3D(float v, float a, FVector Position, float& horizontal_angle, float& vertical_angle, float& time)
+{
+	horizontal_angle = GetAngleOnThePlane(Position.X, Position.Y);
+	vertical_angle = GetAngleOnThePlane(FMath::Sqrt(Position.X * Position.X + Position.Y * Position.Y), Position.Z);
+
+	double S = FMath::Sqrt(Position.X * Position.X + Position.Y * Position.Y + Position.Z * Position.Z);
+	double t_a = v / a;
+	double S_a = v / 2 * t_a;
+	S -= S_a;
+	time = (S / v) + t_a;
+}
+
 bool UGameManager::ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition)
 {
 	// position => 0:-:1
@@ -146,6 +165,66 @@ bool UGameManager::ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Para
 			}
 		}
 
+	}
+	if (CollisionTime > 0) return true;
+	return false;
+}
+
+bool UGameManager::LineParabola2D(FProjectileParams Projectile, FTargetParams Target, float Step, float& CollisionTime, FVector& CollisionPosition)
+{
+	float x_0 = Target.StartLocation.X - Projectile.StartLocation.X;
+	float y_0 = Target.StartLocation.Z - Projectile.StartLocation.Z;
+
+	float u_x2 = Target.Velocity * FMath::Cos(FMath::DegreesToRadians(Target.StartRotation.Pitch));
+	float u_y2 = Target.Velocity * FMath::Sin(FMath::DegreesToRadians(Target.StartRotation.Pitch));
+	FPredictProjectilePathParams Params;
+	Params.StartLocation = Projectile.StartLocation;
+	Params.OverrideGravityZ = 0;
+	Params.bTraceComplex = true;
+	Params.bTraceWithCollision = true;
+	Params.LaunchVelocity = Projectile.StartRotation.Vector() * Projectile.Velocity;
+	Params.MaxSimTime = TimeOfFlight(Target.Velocity, Target.StartRotation.Pitch, Target.StartLocation[1]);
+	Params.SimFrequency = 15;
+
+	FPredictProjectilePathResult Result;
+	float Time;
+	if (UGameplayStatics::PredictProjectilePath(this, Params, Result))
+	{
+		Time = Result.HitResult.Time * Params.MaxSimTime;//TimeOfFlight(Target.Velocity, Target.StartRotation.Pitch, Target.StartLocation[1]);//Get the time of colission of a Balistic Missile with the ground
+	}
+	
+	Projectile.DesiredRotation.Pitch = -90;
+	CollisionTime = -1;
+	Projectile.WaitTime = -1;
+	CollisionPosition.X = -1;
+	CollisionPosition.Z = -1;
+
+
+
+	for (float t = 0; t < Time; t += Step) {
+		float s_x = u_x2 * t;
+		float s_y = u_y2 * t - 0.5 * g * t * t;
+		float x = x_0 + s_x;
+		float y = y_0 + s_y;
+
+
+		float angle1 = 0, time1 = -1;
+		FVector2D CurrentPosition = FVector2D(x, y);
+		LinePoint2D(Projectile.Velocity, CurrentPosition, angle1, time1);
+		if (CollisionTime < Time) continue; // check the collision with the suroundings for the projectile, fired at an angle = angle1, with g = 0
+		if (time1 * Projectile.FuelExpense > Projectile.FuelTank) continue;
+		if (time1 <= t && angle1 != -90) {
+			float Rotation = abs(Projectile.StartRotation.Pitch - angle1);
+			float RotationTime = Rotation / Projectile.RotationSpeed;
+			Projectile.WaitTime = t - time1;
+			if (Projectile.WaitTime >= RotationTime) {
+				Projectile.DesiredRotation.Pitch = angle1;
+				CollisionTime = t;
+				CollisionPosition.X = x;
+				CollisionPosition.Z = y;
+				break;
+			}
+		}
 	}
 	if (CollisionTime > 0) return true;
 	return false;
@@ -214,6 +293,50 @@ bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Para
 
 	}
 
+	if (CollisionTime > 0) return true;
+	return false;
+}
+
+bool UGameManager::LineParabola3D(FProjectileParams Projectile, FTargetParams Target, float u1, float a, float u2, float starting_horizontal_angle1, float starting_vertical_angle1, float horizontal_angle2, float vertical_angle2, float c_h, float c_v, std::vector<float> Position1, std::vector<float> Position2, float& horizontal_result_angle, float& vertical_result_angle, float Step, float& CollisionTime, float& WaitTime, float FuelAmount, float FuelPrice)
+{
+	float x_0 = Target.StartLocation[0] - Projectile.StartLocation[0];
+	float y_0 = Target.StartLocation[1] - Projectile.StartLocation[1];
+	float z_0 = Target.StartLocation[2] - Projectile.StartLocation[2];
+	float u_x2 = Target.Velocity * FMath::Cos(degreesToRadians(Target.StartRotation.Yaw)) * FMath::Cos(degreesToRadians(Target.StartRotation.Pitch));
+	float u_y2 = Target.Velocity * FMath::Cos(degreesToRadians(90 - Target.StartRotation.Yaw)) * FMath::Cos(degreesToRadians(Target.StartRotation.Pitch));
+	float u_z2 = Target.Velocity * FMath::Sin(degreesToRadians(Target.StartRotation.Pitch));
+	float Time = TimeOfFlight(Target.Velocity, Target.StartRotation.Pitch, Target.StartLocation[2]);//Get the time of colission of a Balistic Missile with the ground
+	float result_vertical_angle = -90;
+	CollisionTime = -1;
+	Projectile.WaitTime = -1;
+
+	for (float t = Step; t < Time; t += Step) {
+
+		float s_x = u_x2 * t;
+		float s_y = u_y2 * t;
+		float s_z = u_z2 * t - 0.5 * t * t * G;
+		FVector CurrentPosition = FVector(x_0 + s_x, y_0 + s_y, z_0 + s_z);
+
+		float horizontal_angle, vertical_angle1, time1, time2;
+		LinePoint3D(Projectile.Velocity, a, CurrentPosition, horizontal_angle, vertical_angle1, time1);
+		if (vertical_angle1 != vertical_angle1) continue; // check the collision with the suroundings for the projectile, fired at an angle = angle1, with g = 0
+		if (time1 * Projectile.FuelExpense > Projectile.FuelTank) continue;
+
+		if (time1 <= t && time1 > 0) {
+			Projectile.WaitTime = t - time1;
+			float RotationH = std::min(abs(horizontal_angle - Projectile.StartRotation.Yaw), (360 - horizontal_angle + Projectile.StartRotation.Yaw));
+			float RotationHTime = RotationH / c_h;
+			float RotationV = abs(Projectile.StartRotation.Pitch - vertical_angle1);
+			float RotationVTime = RotationV / c_v;
+			float RotationTime = std::max(RotationHTime, RotationVTime);
+			if (RotationTime <= Projectile.WaitTime) {
+				Projectile.DesiredRotation.Yaw = horizontal_angle;
+				Projectile.DesiredRotation.Pitch = vertical_angle1;
+				CollisionTime = t;
+				break;
+			}
+		}
+	}
 	if (CollisionTime > 0) return true;
 	return false;
 }
