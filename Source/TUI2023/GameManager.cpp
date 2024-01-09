@@ -93,13 +93,13 @@ void UGameManager::LinePoint2D(float u, FVector2D Position, float& result_angle,
 	time = S / u;
 }
 
-void UGameManager::LinePoint3D(float v, float a, FVector Position, float& horizontal_angle, float& vertical_angle, float& time)
+void UGameManager::LinePoint3D(float v, FVector Position, float& horizontal_angle, float& vertical_angle, float& time)
 {
 	horizontal_angle = GetAngleOnThePlane(Position.X, Position.Y);
 	vertical_angle = GetAngleOnThePlane(FMath::Sqrt(Position.X * Position.X + Position.Y * Position.Y), Position.Z);
 
-	double S = FMath::Sqrt(Position.X * Position.X + Position.Y * Position.Y + Position.Z * Position.Z);
-	double t_a = v / a;
+	float S = FMath::Sqrt(Position[0] * Position[0] + Position[1] * Position[1] + Position[2] * Position[2]);
+	double t_a = v / 1;
 	double S_a = v / 2 * t_a;
 	S -= S_a;
 	time = (S / v) + t_a;
@@ -183,7 +183,7 @@ bool UGameManager::LineParabola2D(FProjectileParams Projectile, FTargetParams Ta
 	Params.bTraceComplex = true;
 	Params.bTraceWithCollision = true;
 	Params.LaunchVelocity = Projectile.StartRotation.Vector() * Projectile.Velocity;
-	Params.MaxSimTime = TimeOfFlight(Target.Velocity, Target.StartRotation.Pitch, Target.StartLocation[1]);
+	Params.MaxSimTime = FlightTime(Target.Velocity, Target.StartRotation.Pitch, Target.StartLocation.Z);
 	Params.SimFrequency = 15;
 
 	FPredictProjectilePathResult Result;
@@ -211,6 +211,7 @@ bool UGameManager::LineParabola2D(FProjectileParams Projectile, FTargetParams Ta
 		float angle1 = 0, time1 = -1;
 		FVector2D CurrentPosition = FVector2D(x, y);
 		LinePoint2D(Projectile.Velocity, CurrentPosition, angle1, time1);
+
 		if (CollisionTime < Time) continue; // check the collision with the suroundings for the projectile, fired at an angle = angle1, with g = 0
 		if (time1 * Projectile.FuelExpense > Projectile.FuelTank) continue;
 		if (time1 <= t && angle1 != -90) {
@@ -230,20 +231,20 @@ bool UGameManager::LineParabola2D(FProjectileParams Projectile, FTargetParams Ta
 	return false;
 }
 
-bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition)
+bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, TArray <TArray<situation_data>>& situations_matrix, float Step, float& CollisionTime, FVector& CollisionPosition)
 {
 	float ProjectileYaw = ProjectileParams.StartRotation.Yaw;
 	float ProjectilePitch = ProjectileParams.StartRotation.Pitch;
 	float TargetYaw = TargetParams.StartRotation.Yaw;
 	float TargetPitch = TargetParams.StartRotation.Pitch;
 
-	float x_0 = TargetParams.StartLocation[0] - ProjectileParams.StartLocation[0];
-	float y_0 = TargetParams.StartLocation[1] - ProjectileParams.StartLocation[1];
-	float z_0 = TargetParams.StartLocation[2] - ProjectileParams.StartLocation[2];
+	float x_0 = TargetParams.StartLocation.X - ProjectileParams.StartLocation.X;
+	float y_0 = TargetParams.StartLocation.Y - ProjectileParams.StartLocation.Y;
+	float z_0 = TargetParams.StartLocation.Z - ProjectileParams.StartLocation.Z;
 	float u_x2 = TargetParams.Velocity * FMath::Cos(FMath::DegreesToRadians(TargetYaw)) * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
 	float u_y2 = TargetParams.Velocity * FMath::Cos(FMath::DegreesToRadians(90 - TargetYaw)) * FMath::Cos(FMath::DegreesToRadians(TargetPitch));
 	float u_z2 = TargetParams.Velocity * FMath::Sin(FMath::DegreesToRadians(TargetPitch));
-	float Time = FlightTime(TargetParams.Velocity, TargetPitch, TargetParams.StartLocation[2]);
+	float Time = FlightTime(TargetParams.Velocity, TargetPitch, TargetParams.StartLocation.Z);
 	//float Time = UGameplayStatics::Pre
 	float MaxH = MaxHeight(ProjectileParams.Velocity);
 	float result_vertical_angle = -90;
@@ -297,15 +298,29 @@ bool UGameManager::ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Para
 	return false;
 }
 
-bool UGameManager::LineParabola3D(FProjectileParams Projectile, FTargetParams Target, float u1, float a, float u2, float starting_horizontal_angle1, float starting_vertical_angle1, float horizontal_angle2, float vertical_angle2, float c_h, float c_v, std::vector<float> Position1, std::vector<float> Position2, float& horizontal_result_angle, float& vertical_result_angle, float Step, float& CollisionTime, float& WaitTime, float FuelAmount, float FuelPrice)
+bool UGameManager::LineParabola3D(FProjectileParams Projectile, FTargetParams Target, float Step, float& CollisionTime)
 {
-	float x_0 = Target.StartLocation[0] - Projectile.StartLocation[0];
-	float y_0 = Target.StartLocation[1] - Projectile.StartLocation[1];
-	float z_0 = Target.StartLocation[2] - Projectile.StartLocation[2];
-	float u_x2 = Target.Velocity * FMath::Cos(degreesToRadians(Target.StartRotation.Yaw)) * FMath::Cos(degreesToRadians(Target.StartRotation.Pitch));
-	float u_y2 = Target.Velocity * FMath::Cos(degreesToRadians(90 - Target.StartRotation.Yaw)) * FMath::Cos(degreesToRadians(Target.StartRotation.Pitch));
-	float u_z2 = Target.Velocity * FMath::Sin(degreesToRadians(Target.StartRotation.Pitch));
-	float Time = TimeOfFlight(Target.Velocity, Target.StartRotation.Pitch, Target.StartLocation[2]);//Get the time of colission of a Balistic Missile with the ground
+	float x_0 = Target.StartLocation.X - Projectile.StartLocation.X;
+	float y_0 = Target.StartLocation.Y - Projectile.StartLocation.Y;
+	float z_0 = Target.StartLocation.Z - Projectile.StartLocation.Z;
+	float u_x2 = Target.Velocity * FMath::Cos(FMath::DegreesToRadians(Target.StartRotation.Yaw)) * FMath::Cos(FMath::DegreesToRadians(Target.StartRotation.Pitch));
+	float u_y2 = Target.Velocity * FMath::Cos(FMath::DegreesToRadians(90 - Target.StartRotation.Yaw)) * FMath::Cos(FMath::DegreesToRadians(Target.StartRotation.Pitch));
+	float u_z2 = Target.Velocity * FMath::Sin(FMath::DegreesToRadians(Target.StartRotation.Pitch));
+	FPredictProjectilePathParams Params;
+	Params.StartLocation = Projectile.StartLocation;
+	Params.OverrideGravityZ = 0;
+	Params.bTraceComplex = true;
+	Params.bTraceWithCollision = true;
+	Params.LaunchVelocity = Projectile.StartRotation.Vector() * Projectile.Velocity;
+	Params.MaxSimTime = 65;
+	Params.SimFrequency = 15;
+
+	FPredictProjectilePathResult Result;
+	float Time;
+	if (UGameplayStatics::PredictProjectilePath(this, Params, Result))
+	{
+		Time = Result.HitResult.Time * Params.MaxSimTime;
+	}
 	float result_vertical_angle = -90;
 	CollisionTime = -1;
 	Projectile.WaitTime = -1;
@@ -318,17 +333,17 @@ bool UGameManager::LineParabola3D(FProjectileParams Projectile, FTargetParams Ta
 		FVector CurrentPosition = FVector(x_0 + s_x, y_0 + s_y, z_0 + s_z);
 
 		float horizontal_angle, vertical_angle1, time1, time2;
-		LinePoint3D(Projectile.Velocity, a, CurrentPosition, horizontal_angle, vertical_angle1, time1);
-		if (vertical_angle1 != vertical_angle1) continue; // check the collision with the suroundings for the projectile, fired at an angle = angle1, with g = 0
+		LinePoint3D(Projectile.Velocity, CurrentPosition, horizontal_angle, vertical_angle1, time1);
+		//if (!UGameplayStatics::PredictProjectilePath()) continue; // check the collision with the suroundings for the projectile, fired at an angle = angle1, with g = 0
 		if (time1 * Projectile.FuelExpense > Projectile.FuelTank) continue;
 
 		if (time1 <= t && time1 > 0) {
 			Projectile.WaitTime = t - time1;
-			float RotationH = std::min(abs(horizontal_angle - Projectile.StartRotation.Yaw), (360 - horizontal_angle + Projectile.StartRotation.Yaw));
-			float RotationHTime = RotationH / c_h;
+			float RotationH = FMath::Min(abs(horizontal_angle - Projectile.StartRotation.Yaw), (360 - horizontal_angle + Projectile.StartRotation.Yaw));
+			float RotationHTime = RotationH / Projectile.LauncherRotationSpeedYaw;
 			float RotationV = abs(Projectile.StartRotation.Pitch - vertical_angle1);
-			float RotationVTime = RotationV / c_v;
-			float RotationTime = std::max(RotationHTime, RotationVTime);
+			float RotationVTime = RotationV / Projectile.LauncherRotationSpeedPitch;
+			float RotationTime = FMath::Max(RotationHTime, RotationVTime);
 			if (RotationTime <= Projectile.WaitTime) {
 				Projectile.DesiredRotation.Yaw = horizontal_angle;
 				Projectile.DesiredRotation.Pitch = vertical_angle1;
@@ -404,6 +419,218 @@ void UGameManager::LoadSimulation3D()
 			P->InitializeProjectile3D(ProjectilesToLoad[i], T, G, WorldSimulationSpeed);
 			Targets3D.Add(T);
 			Projectiles3D.Add(P);
+		}
+	}
+}
+
+struct object {
+	float x = 0;
+	float y = 0;
+	float z = 0;
+
+	float u = 0;
+	float a = 0;
+
+	bool IsBalistic = false;
+
+	float horizontal_angle;
+	float vertical_angle;
+	float c_v = 1;
+	float c_h = 1;
+
+	float fuel_amount;
+	float fuel_price;
+};
+
+
+void UGameManager::CreatingSituation3D(TArray <TArray<situation_data>>& situations_matrix) {
+	int target_amount = TargetsToLoad.Num();
+	int projectile_amount = ProjectilesToLoad.Num();
+	for (int i = 0; i < target_amount; i++) {
+		for (int j = 0; j < projectile_amount; j++) {
+			FVector Position1 = ProjectilesToLoad[j].StartLocation;
+			FVector Position2 = TargetsToLoad[i].StartLocation;
+			bool f;
+			if (!TargetsToLoad[i].isBallistic) {
+				situations_matrix[i][j].IsPossible = false;
+				continue;
+			}
+			if (ProjectilesToLoad[j].isBallistic) {
+				f = ParabolaParabola3D(ProjectilesToLoad[j], TargetsToLoad[i], 0.01, situations_matrix[i][j].CollisionTime, situations_matrix[i][j].CollisionPosition);
+				situations_matrix[i][j].IsPossible = f;
+			}
+			else {
+				f = LineParabola3D(ProjectilesToLoad[j], TargetsToLoad[i], 0.01, situations_matrix[i][j].CollisionTime);
+				situations_matrix[i][j].IsPossible = f;
+
+			}
+		}
+	}
+}
+
+void UGameManager::CreatingSituation2D(vector <object>& projectiles, vector <object>& targets, vector <vector<situation_data>>& situations_matrix) {
+	int target_amount = targets.size();
+	int projectile_amount = projectiles.size();
+	for (int i = 0; i < target_amount; i++) {
+		for (int j = 0; j < projectile_amount; j++) {
+			vector <float> Position1(2);
+			Position1[0] = projectiles[j].x;
+			Position1[1] = projectiles[j].z;
+			//Position1[2] = projectiles[j].z;
+			vector <float> Position2(2);
+			Position2[0] = targets[i].x;
+			Position2[1] = targets[i].z;
+			//Position2[2] = targets[i].z;
+			bool f;
+			if (targets[i].IsBalistic == false) {
+				situations_matrix[i][j].IsPossible = false;
+				continue;
+			}
+			if (projectiles[j].IsBalistic) {
+				f = ParabolaParabola2D(projectiles[j].u, targets[i].u, projectiles[j].vertical_angle, targets[i].vertical_angle, projectiles[j].c_v, Position1, Position2, situations_matrix[i][j].vertical_angle, 0.01, situations_matrix[i][j].CollisionTime, situations_matrix[i][j].WaitTime);
+				situations_matrix[i][j].IsPossible = f;
+			}
+			else {
+				vector <float> CollisionPosition(2);
+
+
+				f = LineParabola2D(projectiles[j].u, projectiles[j].a, targets[i].u, projectiles[j].vertical_angle, targets[i].vertical_angle, projectiles[j].c_v, Position1, Position2, situations_matrix[i][j].vertical_angle, 0.01, situations_matrix[i][j].CollisionTime, situations_matrix[i][j].WaitTime, CollisionPosition, projectiles[j].fuel_amount, projectiles[j].fuel_price);
+				situations_matrix[i][j].IsPossible = f;
+				situations_matrix[i][j].CollisionPosition_x = CollisionPosition[0];
+				situations_matrix[i][j].CollisionPosition_y = CollisionPosition[1];
+			}
+			//cout << f << ' ';
+		}
+		cout << endl;
+	}
+}
+
+
+
+void UGameManager::ProcessingSituation(vector <object>& projectiles, vector <object>& targets, vector <vector<situation_data>>& situations_matrix, vector <int>& linkage) {
+
+	int target_amount = targets.size();
+	int projectile_amount = projectiles.size();
+	//vector <int> linkage(0);
+	vector <bool> ocupied_projectiles(projectile_amount, false);
+	//vector < vector<situation_data>> situations_matrix;
+	situations_matrix.resize(target_amount);
+	for (int i = 0; i < target_amount; i++) {
+		situations_matrix[i].resize(projectile_amount);
+	}
+	//CreatingSituation3D(projectiles, targets, situations_matrix);
+	CreatingSituation2D(projectiles, targets, situations_matrix);
+	for (int i = 0; i < target_amount; i++) {
+		for (int j = 0; j < projectile_amount; j++) cout << situations_matrix[i][j].IsPossible << ' ';
+		cout << endl;
+	}
+
+	//CreatingSituation()
+
+	int max_possible = min(projectile_amount, target_amount);
+	int amount = 1;
+	int max_current = 0;
+	vector<int> result;
+	vector<vector<int> > matrix;
+
+
+	matrix.resize(target_amount);
+	cout << endl;
+
+	for (int i = 0; i < target_amount; i++) {
+		int a = 0, b = 0;
+		for (int j = 0; j < projectile_amount; j++) {
+			cout << situations_matrix[i][j].IsPossible << ' ';
+			if (situations_matrix[i][j].IsPossible == true) {
+				matrix[i].push_back(j);
+				a++;
+			}
+			else {
+				b++;
+			}
+
+
+		}
+		if (b == projectile_amount) max_possible--;
+		if (a != 0) amount *= a;
+		cout << endl;
+
+	}
+
+	//cout << endl;
+
+	for (int i = 0; i < target_amount; i++) {
+
+		for (int j = 0; j < matrix[i].size(); j++) {
+			//cout << matrix[i][j] << " ";
+		}
+
+		//cout << endl;
+
+	}
+	//cout << amount << endl << endl;
+	for (int i = 0; i < amount; i++) {
+		int  sum = 0;
+		int  t1 = i, t2 = amount;
+		vector<int > ans;
+		set<int > arr;
+		for (int j = 0; j < target_amount; j++) {
+
+			if (matrix[j].size() != 0) {
+				t2 /= matrix[j].size();
+				int  k = t1 / t2;
+				t1 = t1 - k * t2;
+
+				ans.push_back(matrix[j][k]);
+				arr.insert(matrix[j][k]);
+			}
+			else {
+				ans.push_back(-1);
+				arr.insert(-1);
+			}
+
+
+
+			t2 /= matrix[j].size();
+			int  k = t1 / t2;
+			t1 = t1 - k * t2;
+
+			ans.push_back(matrix[j][k]);
+			arr.insert(matrix[j][k]);
+
+
+		}
+		if (arr.size() > max_current) {
+			max_current = arr.size();
+			result = ans;
+		}
+
+	}
+
+	vector<int > output;
+	for (int i = 0; i < result.size(); i++) {
+		if (InArr(output, result[i])) {
+			output.push_back(-1);
+		}
+		else {
+			output.push_back(result[i]);
+		}
+
+	}
+
+	linkage = output;
+	for (int i = 0; i < target_amount; i++) {
+		if (linkage[i] > -1) ocupied_projectiles[linkage[i]] = true;
+	}
+	cout << endl << endl;
+	for (int i = 0; i < target_amount; i++) {
+		if (linkage[i] == -1 && targets[i].IsBalistic == false) {
+			for (int j = 0; j < projectile_amount; j++) {
+				if (ocupied_projectiles[j] == false && projectiles[j].IsBalistic == false) {
+					linkage[i] = j;
+					ocupied_projectiles[j] = true;
+				}
+			}
 		}
 	}
 }

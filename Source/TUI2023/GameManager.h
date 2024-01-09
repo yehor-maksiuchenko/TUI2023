@@ -44,7 +44,7 @@ public:
 	void LinePoint2D(float u, FVector2D Position, float& result_angle, float& time);
 
 	UFUNCTION()
-	void LinePoint3D(float v, float a, FVector Position, float& horizontal_angle, float& vertical_angle, float& time);
+	void LinePoint3D(float v, FVector Position, float& horizontal_angle, float& vertical_angle, float& time);
 
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
 	bool ParabolaParabola2D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
@@ -55,6 +55,12 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
 	bool ParabolaParabola3D(UPARAM(ref, DisplayName = "Projectile Parameters") FProjectileParams& ProjectileParams, UPARAM(ref, DisplayName = "Target Parameters") FTargetParams& TargetParams, float Step, float& CollisionTime, FVector& CollisionPosition);
 
+	UFUNCTION(BlueprintCallable, meta = (Step = 0.1))
+	bool LineParabola3D(FProjectileParams Projectile, FTargetParams Target, float Step, float& CollisionTime);
+
+	UFUNCTION(BlueprintCallable)
+	void CreatingSituation3D(TArray<TArray<situation_data>>& situations_matrix);
+	
 	UFUNCTION(BlueprintPure)
 	void SetPredictionResults(FRotator DesiredRotation, float WaitTime, FProjectileParams& ProjectileParams);
 	
@@ -93,5 +99,26 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Lists of Objects Specs")
 	TArray<FProjectileParams> ProjectilesToLoad = {};
+};
+
+USTRUCT(BlueprintType)
+struct situation_data
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	bool IsPossible = false;
+
+	UPROPERTY()
+	FRotator Rotation = FRotator();
+
+	UPROPERTY()
+	float CollisionTime;
+
+	UPROPERTY()
+	float WaitTime;
+
+	UPROPERTY()
+	FVector CollisionPosition = FVector();
 };
 
